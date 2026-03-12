@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>대만 · 홍콩 마케팅 대시보드</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background: #07070f;
+    color: #dde1ea;
+    font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    font-size: 14px;
+  }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #07070f; }
+  ::-webkit-scrollbar-thumb { background: #161d30; border-radius: 3px; }
+
+  /* HEADER */
+  #header {
+    background: linear-gradient(135deg, #0b0b1c, #111020, #0b1c18);
+    border-bottom: 1px solid #161d30;
+    padding: 22px 28px 0;
+    position: sticky; top: 0; z-index: 100;
+  }
+  #header-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 18px;
+  }
+  #header-label {
+    font-size: 10px; letter-spacing: 4px; color: #2d3a54;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  #header-title {
+    font-size: 22px; font-weight: 900;
+    background: linear-gradient(90deg, #c7d2fe, #818cf8);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  #header-badges { display: flex; gap: 8px; margin-top: 6px; }
+  .badge {
+    background: #0f1420; border: 1px solid #161d30;
+    border-radius: 8px; padding: 5px 12px; text-align: center;
+  }
+  .badge-label { font-size: 9px; color: #2d3a54; }
+  .badge-val { font-size: 14px; font-weight: 800; }
+
+  /* TABS */
+  #tabs { display: flex; gap: 2px; overflow-x: auto; }
+  #tabs::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    padding: 9px 15px; border: none; background: transparent;
+    color: #2d3a54; cursor: pointer; font-size: 12px; font-weight: 400;
+    border-bottom: 2px solid transparent;
+    border-radius: 6px 6px 0 0; white-space: nowrap;
+    transition: all .15s; font-family: inherit;
+  }
+  .tab-btn.active {
+    background: #0f1420; color: #c7d2fe; font-weight: 700;
+    border-bottom-color: #818cf8;
+  }
+
+  /* CONTENT */
+  #content { padding: 26px 28px; max-width: 1080px; margin: 0 auto; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: #0d1117; border: 1px solid #161d30;
+    border-radius: 14px; padding: 20px;
+  }
+  .card-sm { border-radius: 10px; padding: 14px 16px; }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+
+  /* PROGRESS BAR */
+  .bar-track { background: #161d30; border-radius: 99px; }
+  .bar-fill { height: 100%; border-radius: 99px; transition: width .5s; }
+
+  /* ALERT */
+  .alert-row {
+    display: flex; align-items: center; gap: 10;
+    padding: 9px 13px; border-radius: 8px; margin-bottom: 7px;
+    font-size: 12px;
+  }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; }
+  th { padding: 8px 14px; text-align: left; font-weight: 500; font-size: 10px; color: #2d3a54; border-bottom: 1px solid #161d30; }
+  td { padding: 12px 14px; border-bottom: 1px solid #0f1420; font-size: 13px; }
+
+  /* INPUTS */
+  .inp {
+    background: #07070f; border: 1px solid #161d30; border-radius: 7px;
+    padding: 9px 12px; color: #dde1ea; font-size: 13px; outline: none;
+    font-family: inherit;
+  }
+  .inp:focus { border-color: #818cf8; }
+  textarea.inp { resize: vertical; line-height: 1.7; width: 100%; }
+
+  /* BUTTONS */
+  .btn-primary {
+    border: none; border-radius: 7px; padding: 9px 18px;
+    cursor: pointer; color: #fff; font-size: 13px; font-weight: 600;
+    background: #818cf8; font-family: inherit;
+  }
+  .btn-sm {
+    border: none; border-radius: 6px; padding: 3px 10px;
+    cursor: pointer; color: #dde1ea; font-size: 11px; font-weight: 500;
+    background: #161d30; font-family: inherit;
+  }
+  .btn-del {
+    background: none; border: none; color: #161d30;
+    cursor: pointer; font-size: 18px; line-height: 1;
+  }
+  .btn-del:hover { color: #ef4444; }
+
+  /* CHECKBOX */
+  .checkbox {
+    width: 19px; height: 19px; border-radius: 5px; flex-shrink: 0;
+    border: 2px solid #ef4444; background: transparent;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+  }
+  .checkbox.medium { border-color: #f59e0b; }
+  .checkbox.checked { background: #22c55e; border-color: #22c55e; }
+  .checkbox.checked::after { content: '✓'; color: #000; font-size: 10px; font-weight: 900; }
+
+  /* IDEA VOTE */
+  .vote-btn {
+    background: none; border: 1px solid #161d30; border-radius: 6px;
+    padding: 3px 9px; cursor: pointer; color: #818cf8; font-size: 13px;
+    display: block; width: 100%; margin-bottom: 3px;
+  }
+  .vote-btn:hover { border-color: #818cf8; }
+
+  /* STATUS TAGS */
+  .tag {
+    padding: 3px 11px; border-radius: 20px; font-size: 10px; font-weight: 700;
+    white-space: nowrap; display: inline-block;
+  }
+
+  /* CHANNEL MINI CARD */
+  .ch-mini {
+    flex: 1; background: #111827; border-radius: 8px; padding: 8px 10px;
+  }
+
+  /* ROW FLEX */
+  .row { display: flex; align-items: center; }
+  .gap-8 { gap: 8px; }
+  .gap-10 { gap: 10px; }
+  .gap-14 { gap: 14px; }
+  .gap-16 { gap: 16px; }
+  .gap-18 { gap: 18px; }
+  .flex-1 { flex: 1; }
+  .mb-6 { margin-bottom: 6px; }
+  .mb-8 { margin-bottom: 8px; }
+  .mb-10 { margin-bottom: 10px; }
+  .mb-12 { margin-bottom: 12px; }
+  .mb-14 { margin-bottom: 14px; }
+  .mb-16 { margin-bottom: 16px; }
+  .mb-18 { margin-bottom: 18px; }
+  .mb-20 { margin-bottom: 20px; }
+  .mb-22 { margin-bottom: 22px; }
+  .mb-24 { margin-bottom: 24px; }
+  .mb-28 { margin-bottom: 28px; }
+  .mt-8 { margin-top: 8px; }
+  .mt-10 { margin-top: 10px; }
+  .mt-12 { margin-top: 12px; }
+  .mt-14 { margin-top: 14px; }
+  .mt-18 { margin-top: 18px; }
+
+  .text-muted { color: #2d3a54; }
+  .text-sm { font-size: 11px; }
+  .text-xs { font-size: 10px; }
+  .text-9 { font-size: 9px; }
+  .fw-700 { font-weight: 700; }
+  .fw-800 { font-weight: 800; }
+  .fw-900 { font-weight: 900; }
+  .text-right { text-align: right; }
+  .no-wrap { white-space: nowrap; }
+
+  @media (max-width: 700px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-4 { grid-template-columns: repeat(2,1fr); }
+    #content { padding: 16px; }
+    #header { padding: 16px 16px 0; }
+  }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-top">
+    <div>
+      <div id="header-label">TW · HK Region · Marketing OS</div>
+      <div id="header-title">대만 · 홍콩 마케팅 대시보드</div>
+    </div>
+    <div style="text-align:right">
+      <div id="header-date" class="text-sm text-muted"></div>
+      <div id="header-badges" class="mb-6"></div>
+    </div>
+  </div>
+  <div id="tabs">
+    <button class="tab-btn active" data-tab="overview">📊 주간 현황</button>
+    <button class="tab-btn" data-tab="revenue">💰 채널별 매출</button>
+    <button class="tab-btn" data-tab="ads">📣 광고 성과</button>
+    <button class="tab-btn" data-tab="influencer">🤝 인플루언서</button>
+    <button class="tab-btn" data-tab="tasks">✅ 이번 주 할 일</button>
+    <button class="tab-btn" data-tab="ideas">💡 아이디어</button>
+    <button class="tab-btn" data-tab="report">📝 주간 보고</button>
+  </div>
+</div>
+
+<div id="content">
+  <div id="panel-overview" class="panel active"></div>
+  <div id="panel-revenue" class="panel"></div>
+  <div id="panel-ads" class="panel"></div>
+  <div id="panel-influencer" class="panel"></div>
+  <div id="panel-tasks" class="panel"></div>
+  <div id="panel-ideas" class="panel"></div>
+  <div id="panel-report" class="panel"></div>
+</div>
+
+<script>
+// ==================== STATE ====================
+const STORAGE_KEY = 'twhk_html_v1';
+
+const DEFAULT = {
+  metrics: {
+    tw: { selfMall:{target:2000,actual:1200}, shopee:{target:2000,actual:1800}, lazada:{target:1000,actual:600} },
+    hk: { selfMall:{target:1500,actual:900}, shopee:{target:1000,actual:720}, lazada:{target:500,actual:280} }
+  },
+  adAccounts: [
+    {id:1,platform:'Meta',region:'TW',budget:300,spend:210,roas:2.8,status:'진행중'},
+    {id:2,platform:'TikTok',region:'TW',budget:200,spend:180,roas:3.2,status:'진행중'},
+    {id:3,platform:'Meta',region:'HK',budget:200,spend:140,roas:2.1,status:'진행중'},
+    {id:4,platform:'TikTok',region:'HK',budget:150,spend:90,roas:1.8,status:'검토필요'},
+  ],
+  influencers: [
+    {id:1,name:'@tw_beauty_lisa',region:'TW',platform:'Instagram',followers:'12.4만',fee:80,status:'협의중',postDate:'2025-04-15',result:''},
+    {id:2,name:'@hk_lifestyle_ray',region:'HK',platform:'TikTok',followers:'8.2만',fee:60,status:'게시완료',postDate:'2025-03-28',result:'조회 42만 / 전환 38건'},
+    {id:3,name:'@tw_health_chen',region:'TW',platform:'TikTok',followers:'31만',fee:200,status:'후보',postDate:'',result:''},
+  ],
+  weeklyTasks: [
+    {id:1,text:'Meta TW 신소재 3종 업로드 및 A/B 테스트 세팅',done:false,priority:'high',category:'광고'},
+    {id:2,text:'TikTok HK ROAS 1.8x → 원인 분석 후 소재 교체 제안',done:false,priority:'high',category:'광고'},
+    {id:3,text:'TW 인플루언서 @tw_health_chen 협찬 단가 협의 메일 발송',done:false,priority:'high',category:'인플루언서'},
+    {id:4,text:'쇼피 TW 5월 기획전 상세페이지 초안 작성',done:false,priority:'medium',category:'쇼핑몰'},
+    {id:5,text:'자사몰 HK 배너 소재 교체 (월초 프로모션)',done:false,priority:'medium',category:'자사몰'},
+    {id:6,text:'주간 광고 성과 리뷰 1줄 인사이트 작성',done:false,priority:'medium',category:'보고'},
+  ],
+  ideas: [
+    {id:1,text:"TikTok TW: '30초 마사지 루틴' UGC 챌린지 → 인플루언서 시드 배포",votes:4,status:'진행예정'},
+    {id:2,text:'쇼피 TW: 리뷰 이벤트 연동 → 자사몰 재구매 쿠폰 발급 구조',votes:3,status:'검토중'},
+    {id:3,text:'Meta HK: 기존 고ROAS TW 소재 HK 버전으로 번역 재활용 테스트',votes:2,status:'검토중'},
+  ],
+  report:{done:'',next:'',blocked:'',insight:''},
+  lastSaved:null
+};
+
+function loadData() {
+  try { const r = localStorage.getItem(STORAGE_KEY); if(r) return JSON.parse(r); } catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT));
+}
+function saveData() {
+  S.lastSaved = new Date().toISOString();
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); } catch(e){}
+}
+
+let S = loadData();
+
+// ==================== CONSTANTS ====================
+const CH_LABEL = {selfMall:'자사몰', shopee:'Shopee', lazada:'Lazada'};
+const CH_COLOR = {selfMall:'#818cf8', shopee:'#f97316', lazada:'#06b6d4'};
+const PLAT_COLOR = {Meta:'#4f8ef7', TikTok:'#ff3b5c', Instagram:'#e1306c'};
+const STATUS_COLOR = {
+  '진행중':'#22c55e','검토필요':'#ef4444','후보':'#64748b',
+  '협의중':'#f59e0b','게시완료':'#22c55e','진행예정':'#38bdf8','검토중':'#a78bfa'
+};
+const CAT_COLOR = {
+  '광고':'#818cf8','인플루언서':'#f59e0b','쇼핑몰':'#06b6d4',
+  '자사몰':'#a78bfa','보고':'#64748b','기타':'#475569'
+};
+
+// ==================== HELPERS ====================
+function totalActual(r){ return Object.values(S.metrics[r]).reduce((s,c)=>s+c.actual,0); }
+function totalTarget(r){ return Object.values(S.metrics[r]).reduce((s,c)=>s+c.target,0); }
+function pct(a,b){ return Math.min(100, Math.round(a/b*100)); }
+function taskDone(){ return S.weeklyTasks.filter(t=>t.done).length; }
+function taskTotal(){ return S.weeklyTasks.length; }
+function taskPct(){ return taskTotal() ? Math.round(taskDone()/taskTotal()*100) : 0; }
+function twPct(){ return pct(totalActual('tw'), totalTarget('tw')); }
+function hkPct(){ return pct(totalActual('hk'), totalTarget('hk')); }
+
+function colorForPct(p){ return p>=80?'#22c55e': p>=60?'#f59e0b':'#ef4444'; }
+
+function tag(text, status){
+  const c = STATUS_COLOR[status] || '#64748b';
+  return `<span class="tag" style="background:${c}20;color:${c};border:1px solid ${c}30">${text}</span>`;
+}
+function catTag(cat){
+  const c = CAT_COLOR[cat] || '#64748b';
+  return `<span class="tag" style="background:${c}18;color:${c};font-size:11px;padding:2px 7px">${cat}</span>`;
+}
+
+// ==================== HEADER ====================
+function renderHeader(){
+  const today = new Date();
+  const days = ['일','월','화','수','목','금','토'];
+  document.getElementById('header-date').textContent =
+    `${today.getFullYear()}. ${today.getMonth()+1}. ${today.getDate()}. (${days[today.getDay()]})`;
+
+  const tp = twPct(), hp = hkPct(), kp = taskPct();
+  document.getElementById('header-badges').innerHTML = [
+    {l:'TW 매출', v:`${tp}%`, c:colorForPct(tp)},
+    {l:'HK 매출', v:`${hp}%`, c:colorForPct(hp)},
+    {l:'주간 할 일', v:`${kp}%`, c:colorForPct(kp)},
+  ].map(b=>`
+    <div class="badge">
+      <div class="badge-label">${b.l}</div>
+      <div class="badge-val" style="color:${b.c}">${b.v}</div>
+    </div>`).join('');
+}
+
+// ==================== OVERVIEW ====================
+function renderOverview(){
+  const panel = document.getElementById('panel-overview');
+
+  // Region cards
+  let regCards = ['tw','hk'].map(r=>{
+    const label = r==='tw'?'🇹🇼 대만 (TW)':'🇭🇰 홍콩 (HK)';
+    const accent = r==='tw'?'#818cf8':'#22d3ee';
+    const act = totalActual(r), tgt = totalTarget(r);
+    const p = pct(act,tgt);
+    const chMinis = Object.entries(S.metrics[r]).map(([ch,v])=>{
+      const cp = pct(v.actual,v.target);
+      return `
+        <div class="ch-mini">
+          <div style="font-size:9px;color:${CH_COLOR[ch]};margin-bottom:4px">${CH_LABEL[ch]}</div>
+          <div style="font-size:12px;font-weight:700">${v.actual.toLocaleString()}</div>
+          <div style="font-size:9px;color:#2d3a54">/${v.target.toLocaleString()}</div>
+          <div class="bar-track" style="height:3px;margin-top:5px">
+            <div class="bar-fill" style="width:${cp}%;background:${CH_COLOR[ch]}"></div>
+          </div>
+        </div>`;
+    }).join('');
+    return `
+      <div class="card">
+        <div style="font-size:11px;color:#2d3a54" class="mb-6">${label} · 월 총매출</div>
+        <div class="row gap-8 mb-12">
+          <span style="font-size:28px;font-weight:900;color:${accent}">${act.toLocaleString()}</span>
+          <span style="font-size:12px;color:#2d3a54">/ ${tgt.toLocaleString()} 만원</span>
+        </div>
+        <div class="bar-track mb-6" style="height:6px">
+          <div class="bar-fill" style="width:${p}%;background:${accent}"></div>
+        </div>
+        <div class="row mb-14" style="justify-content:space-between;font-size:11px">
+          <span style="color:${colorForPct(p)}">${p}% 달성</span>
+          <span style="color:#ef4444">잔여 ${(tgt-act).toLocaleString()} 만원</span>
+        </div>
+        <div class="row gap-8">${chMinis}</div>
+      </div>`;
+  }).join('');
+
+  // Alerts
+  const criticalAds = S.adAccounts.filter(a=>a.status==='검토필요');
+  const criticalTasks = S.weeklyTasks.filter(t=>!t.done && t.priority==='high');
+  let alertsHtml = '';
+  criticalAds.forEach(a=>{
+    alertsHtml += `<div class="alert-row" style="background:#ef444410;border:1px solid #ef444430">
+      📣 <span class="flex-1">${a.platform} ${a.region} 광고 ROAS ${a.roas}x — 소재 교체 또는 예산 조정 필요</span>
+    </div>`;
+  });
+  criticalTasks.forEach(t=>{
+    alertsHtml += `<div class="alert-row" style="background:#f59e0b10;border:1px solid #f59e0b30">
+      ✅ <span class="flex-1">${t.text}</span>
+      <button class="btn-sm" onclick="toggleTask(${t.id})">완료</button>
+    </div>`;
+  });
+  if(!criticalAds.length && !criticalTasks.length){
+    alertsHtml = `<div style="color:#22c55e;font-size:12px">✓ 긴급 항목 없음</div>`;
+  }
+
+  // Quick stats
+  const stats = [
+    {l:'진행중 광고', v:`${S.adAccounts.filter(a=>a.status==='진행중').length}개`, c:'#818cf8'},
+    {l:'검토필요 광고', v:`${S.adAccounts.filter(a=>a.status==='검토필요').length}개`, c:'#ef4444'},
+    {l:'진행중 인플루언서', v:`${S.influencers.filter(i=>i.status==='협의중'||i.status==='게시완료').length}명`, c:'#f59e0b'},
+    {l:'아이디어 풀', v:`${S.ideas.length}개`, c:'#a78bfa'},
+  ].map(s=>`
+    <div class="card card-sm">
+      <div style="font-size:10px;color:#2d3a54;margin-bottom:6px">${s.l}</div>
+      <div style="font-size:22px;font-weight:800;color:${s.c}">${s.v}</div>
+    </div>`).join('');
+
+  panel.innerHTML = `
+    <div class="grid-2 mb-22">${regCards}</div>
+    <div class="mb-20">
+      <div style="font-size:11px;color:#2d3a54;margin-bottom:10px;letter-spacing:1px">⚠️ 지금 당장 챙겨야 할 것</div>
+      <div id="alerts-container">${alertsHtml}</div>
+    </div>
+    <div class="grid-4">${stats}</div>`;
+}
+
+// ==================== REVENUE ====================
+function renderRevenue(){
+  const panel = document.getElementById('panel-revenue');
+  let html = `<div style="font-size:11px;color:#2d3a54;margin-bottom:18px">숫자 클릭 → 직접 수정 가능</div>`;
+
+  ['tw','hk'].forEach(r=>{
+    const label = r==='tw'?'🇹🇼 대만 (TW)':'🇭🇰 홍콩 (HK)';
+    let rows = Object.entries(S.metrics[r]).map(([ch,v])=>{
+      const p = pct(v.actual, v.target);
+      const gap = v.target - v.actual;
+      return `
+        <tr>
+          <td><span class="tag" style="font-size:11px;font-weight:700;color:${CH_COLOR[ch]};background:${CH_COLOR[ch]}18;padding:3px 10px">${CH_LABEL[ch]}</span></td>
+          <td><span class="editable" onclick="editMetric('${r}','${ch}','target',${v.target})" title="클릭하여 수정" style="cursor:pointer;border-bottom:1px dashed #161d30;color:#2d3a54">${v.target.toLocaleString()}</span></td>
+          <td><span class="editable" onclick="editMetric('${r}','${ch}','actual',${v.actual})" title="클릭하여 수정" style="cursor:pointer;border-bottom:1px dashed #161d30;color:#dde1ea">${v.actual.toLocaleString()}</span></td>
+          <td>
+            <div class="row gap-8">
+              <div class="bar-track" style="width:60px;height:5px">
+                <div class="bar-fill" style="width:${p}%;background:${colorForPct(p)}"></div>
+              </div>
+              <span style="font-size:12px;font-weight:700;color:${colorForPct(p)}">${p}%</span>
+            </div>
+          </td>
+          <td style="font-size:12px;color:${gap>0?'#ef4444':'#22c55e'}">${gap>0?`-${gap.toLocaleString()}`:'✓ 달성'}</td>
+        </tr>`;
+    }).join('');
+    const ta = totalActual(r), tt = totalTarget(r);
+    const tp = pct(ta,tt);
+    rows += `
+      <tr style="background:#0f1420">
+        <td style="font-size:11px;color:#2d3a54">합계</td>
+        <td style="font-size:12px;font-weight:700;color:#2d3a54">${tt.toLocaleString()}</td>
+        <td style="font-size:12px;font-weight:700;color:#dde1ea">${ta.toLocaleString()}</td>
+        <td colspan="2" style="font-size:12px;font-weight:700;color:${colorForPct(tp)}">${tp}%</td>
+      </tr>`;
+    html += `
+      <div class="mb-28">
+        <div style="font-size:14px;font-weight:700;color:#c7d2fe;margin-bottom:12px">${label}</div>
+        <table><thead><tr><th>채널</th><th>목표 (만원)</th><th>실적 (만원)</th><th>달성률</th><th>잔여</th></tr></thead>
+        <tbody>${rows}</tbody></table>
+      </div>`;
+  });
+  panel.innerHTML = html;
+}
+
+// ==================== ADS ====================
+function renderAds(){
+  const panel = document.getElementById('panel-ads');
+  let cards = S.adAccounts.map(a=>{
+    const rc = !a.roas?'#2d3a54': a.roas>=3?'#22c55e': a.roas>=2?'#f59e0b':'#ef4444';
+    const sp = pct(a.spend, a.budget);
+    const border = a.status==='검토필요'?'#3f1515':'#161d30';
+    return `
+      <div class="card mb-12" style="border-color:${border}">
+        <div class="row gap-18">
+          <div style="background:${PLAT_COLOR[a.platform]}20;border:1px solid ${PLAT_COLOR[a.platform]}40;border-radius:8px;padding:5px 14px;font-size:12px;font-weight:700;color:${PLAT_COLOR[a.platform]};white-space:nowrap">${a.platform}</div>
+          <div style="background:#111827;border-radius:5px;padding:3px 9px;font-size:10px;color:#94a3b8">${a.region}</div>
+          <div class="flex-1">
+            <div class="row gap-8 mb-6" style="font-size:11px;color:#2d3a54">
+              <span>예산 ${a.budget}만원</span><span>집행 ${a.spend}만원</span><span>(${sp}%)</span>
+            </div>
+            <div class="bar-track" style="height:5px">
+              <div class="bar-fill" style="width:${sp}%;background:#818cf8"></div>
+            </div>
+          </div>
+          <div class="text-right" style="min-width:72px">
+            <div style="font-size:9px;color:#2d3a54;margin-bottom:2px">ROAS</div>
+            <div style="font-size:26px;font-weight:900;color:${rc}">${a.roas?a.roas+'x':'—'}</div>
+          </div>
+          ${tag(a.status, a.status)}
+        </div>
+      </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div style="font-size:11px;color:#2d3a54;margin-bottom:18px">ROAS 2.0 이상 유지가 기준선. 빨간색이면 즉시 소재 점검 필요.</div>
+    ${cards}
+    <div class="card mt-18" style="padding:14px">
+      <div style="font-size:11px;color:#2d3a54;margin-bottom:8px">📌 기준</div>
+      <div class="row" style="gap:20px;font-size:11px;flex-wrap:wrap">
+        <span style="color:#22c55e">● 3.0x↑ 우수 → 예산 증액 검토</span>
+        <span style="color:#f59e0b">● 2.0~3.0x 정상 → 유지</span>
+        <span style="color:#ef4444">● 2.0x↓ 경고 → 즉시 소재 교체</span>
+      </div>
+    </div>`;
+}
+
+// ==================== INFLUENCER ====================
+function renderInfluencer(){
+  const panel = document.getElementById('panel-influencer');
+  let cards = S.influencers.map(inf=>{
+    const result = inf.result ? `
+      <div style="margin-top:10px;font-size:11px;color:#22c55e;background:#081a08;border:1px solid #166534;border-radius:6px;padding:6px 10px">
+        📊 ${inf.result}
+      </div>` : '';
+    return `
+      <div class="card mb-12">
+        <div class="row gap-14">
+          <div class="flex-1">
+            <div class="row gap-8 mb-8" style="flex-wrap:wrap">
+              <span style="font-size:14px;font-weight:700">${inf.name}</span>
+              <span class="tag" style="background:${PLAT_COLOR[inf.platform]}20;color:${PLAT_COLOR[inf.platform]};font-size:10px">${inf.platform}</span>
+              <span class="tag" style="background:#161d30;color:#64748b;font-size:10px">${inf.region}</span>
+            </div>
+            <div class="row" style="gap:16px;font-size:11px;color:#2d3a54">
+              <span>팔로워 ${inf.followers}</span>
+              <span>협찬비 ${inf.fee}만원</span>
+              ${inf.postDate?`<span>게시 ${inf.postDate}</span>`:''}
+            </div>
+            ${result}
+          </div>
+          ${tag(inf.status, inf.status)}
+        </div>
+      </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div style="font-size:11px;color:#2d3a54;margin-bottom:18px">협찬 파이프라인 현황. 게시 후 성과 반드시 기록.</div>
+    ${cards}
+    <div style="margin-top:12px;padding:14px;border:1px dashed #161d30;border-radius:10px;text-align:center;color:#2d3a54;font-size:12px">
+      + 인플루언서 직접 추가하려면 하단 보고 탭에 메모해두세요
+    </div>`;
+}
+
+// ==================== TASKS ====================
+function renderTasks(){
+  const panel = document.getElementById('panel-tasks');
+  const td = taskDone(), tt = taskTotal(), tp = taskPct();
+  const today = new Date();
+  const weekStr = `${today.getMonth()+1}월 ${Math.ceil(today.getDate()/7)}주차`;
+
+  let taskHtml = '';
+  ['high','medium'].forEach(pri=>{
+    const tasks = S.weeklyTasks.filter(t=>t.priority===pri);
+    if(!tasks.length) return;
+    const priLabel = pri==='high'?'🔴 이번 주 반드시':'🟡 이번 주 안에';
+    const priColor = pri==='high'?'#ef4444':'#f59e0b';
+    taskHtml += `<div class="mb-20">
+      <div style="font-size:10px;color:${priColor};margin-bottom:10px;letter-spacing:1px">${priLabel}</div>`;
+    tasks.forEach(t=>{
+      const cbClass = `checkbox${t.done?' checked':''} ${t.done?'':pri}`;
+      const bg = t.done?'#091409':'#0d1117';
+      const border = t.done?'#166534':'#161d30';
+      taskHtml += `
+        <div class="row gap-10" style="padding:12px 14px;background:${bg};border:1px solid ${border};border-radius:10px;margin-bottom:8px">
+          <div class="${cbClass}" onclick="toggleTask(${t.id})"></div>
+          ${catTag(t.category)}
+          <span class="flex-1" style="font-size:13px;text-decoration:${t.done?'line-through':'none'};color:${t.done?'#2d3a54':'#dde1ea'}">${t.text}</span>
+          <button class="btn-del" onclick="deleteTask(${t.id})">×</button>
+        </div>`;
+    });
+    taskHtml += `</div>`;
+  });
+
+  panel.innerHTML = `
+    <div class="card mb-20">
+      <div class="row mb-8" style="justify-content:space-between;font-size:11px">
+        <span class="text-muted">주간 진행률 — ${weekStr}</span>
+        <span style="font-weight:700;color:${colorForPct(tp)}">${td}/${tt}</span>
+      </div>
+      <div class="bar-track" style="height:10px">
+        <div class="bar-fill" style="width:${tp}%;background:${tp>=80?'linear-gradient(90deg,#22c55e,#16a34a)':tp>=50?'linear-gradient(90deg,#f59e0b,#d97706)':'linear-gradient(90deg,#ef4444,#dc2626)'}"></div>
+      </div>
+    </div>
+    ${taskHtml}
+    <div class="row gap-10 mt-8">
+      <input id="new-task-input" class="inp flex-1" placeholder="새 할 일 추가 (Enter)" onkeydown="if(event.key==='Enter')addTask()">
+      <button class="btn-primary" onclick="addTask()">추가</button>
+    </div>`;
+}
+
+// ==================== IDEAS ====================
+function renderIdeas(){
+  const panel = document.getElementById('panel-ideas');
+  const sorted = [...S.ideas].sort((a,b)=>b.votes-a.votes);
+  let cards = sorted.map((idea,i)=>{
+    const isTop = i===0;
+    return `
+      <div style="background:${isTop?'#0f0f1e':'#0d1117'};border:1px solid ${isTop?'#818cf8':'#161d30'};border-radius:14px;padding:18px;margin-bottom:10px">
+        <div class="row gap-14">
+          <div style="text-align:center;min-width:42px">
+            <button class="vote-btn" style="border-color:${isTop?'#818cf8':'#161d30'}" onclick="voteIdea(${idea.id})">▲</button>
+            <div style="font-size:17px;font-weight:900;color:${isTop?'#818cf8':'#2d3a54'}">${idea.votes}</div>
+          </div>
+          ${isTop?'<div style="font-size:14px">🏆</div>':''}
+          <div class="flex-1" style="font-size:13px;line-height:1.6">${idea.text}</div>
+          ${tag(idea.status, idea.status)}
+        </div>
+      </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div style="font-size:11px;color:#2d3a54;margin-bottom:18px">콘텐츠·캠페인·채널 실험 아이디어를 올리고 투표로 우선순위를 결정해요.</div>
+    <div id="ideas-list">${cards}</div>
+    <div class="row gap-10 mt-10">
+      <input id="new-idea-input" class="inp flex-1" placeholder="아이디어 올리기 (Enter)" onkeydown="if(event.key==='Enter')addIdea()">
+      <button class="btn-primary" style="background:#a78bfa" onclick="addIdea()">올리기</button>
+    </div>`;
+}
+
+// ==================== REPORT ====================
+function renderReport(){
+  const panel = document.getElementById('panel-report');
+  const today = new Date();
+  const weekStr = `${today.getMonth()+1}월 ${Math.ceil(today.getDate()/7)}주차`;
+  const savedStr = S.lastSaved ? `저장: ${new Date(S.lastSaved).toLocaleString('ko-KR')}` : '자동 저장';
+
+  const fields = [
+    {f:'done', label:'✅ 이번 주 한 것', ph:'완료 업무, 집행 광고, 게시된 협찬 콘텐츠 등'},
+    {f:'next', label:'📌 다음 주 할 것', ph:'주요 실행 계획'},
+    {f:'blocked', label:'🚧 막히는 것 / 의사결정 필요한 것', ph:'승인 필요, 예산 문제, 리소스 부족 — 여기 적어야 빠르게 해결됩니다'},
+    {f:'insight', label:'💡 이번 주 인사이트 (1줄)', ph:'어떤 소재가 먹혔는지, 어떤 플랫폼이 반응했는지, 가설 검증 결과'},
+  ].map(({f,label,ph})=>`
+    <div class="mb-18">
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:7px">${label}</div>
+      <textarea class="inp" rows="3" placeholder="${ph}" onchange="updateReport('${f}',this.value)" oninput="updateReport('${f}',this.value)">${S.report[f]||''}</textarea>
+    </div>`).join('');
+
+  panel.innerHTML = `
+    <div class="card" style="border-radius:16px;padding:26px">
+      <div class="row mb-22" style="justify-content:space-between">
+        <div style="font-size:15px;font-weight:800;color:#c7d2fe">📝 주간 보고 — ${weekStr}</div>
+        <div style="font-size:10px;color:#2d3a54">매주 금요일까지 작성</div>
+      </div>
+      ${fields}
+      <div class="row mt-10" style="justify-content:space-between;padding-top:10px;border-top:1px solid #161d30;font-size:11px">
+        <span id="last-saved-txt" class="text-muted">${savedStr}</span>
+        <span style="color:#22c55e">✓ 자동 저장 중</span>
+      </div>
+    </div>`;
+}
+
+// ==================== ACTIONS ====================
+function toggleTask(id){
+  const t = S.weeklyTasks.find(t=>t.id===id);
+  if(t) t.done = !t.done;
+  saveData();
+  renderHeader();
+  if(document.getElementById('panel-tasks').classList.contains('active')) renderTasks();
+  if(document.getElementById('panel-overview').classList.contains('active')) renderOverview();
+}
+
+function deleteTask(id){
+  S.weeklyTasks = S.weeklyTasks.filter(t=>t.id!==id);
+  saveData();
+  renderHeader();
+  renderTasks();
+}
+
+function addTask(){
+  const inp = document.getElementById('new-task-input');
+  const text = inp.value.trim();
+  if(!text) return;
+  S.weeklyTasks.push({id:Date.now(),text,done:false,priority:'medium',category:'기타'});
+  inp.value = '';
+  saveData();
+  renderHeader();
+  renderTasks();
+}
+
+function addIdea(){
+  const inp = document.getElementById('new-idea-input');
+  const text = inp.value.trim();
+  if(!text) return;
+  S.ideas.push({id:Date.now(),text,votes:0,status:'검토중'});
+  inp.value = '';
+  saveData();
+  renderIdeas();
+  renderHeader();
+}
+
+function voteIdea(id){
+  const idea = S.ideas.find(i=>i.id===id);
+  if(idea) idea.votes++;
+  saveData();
+  renderIdeas();
+}
+
+function updateReport(field, val){
+  S.report[field] = val;
+  saveData();
+  const el = document.getElementById('last-saved-txt');
+  if(el) el.textContent = `저장: ${new Date(S.lastSaved).toLocaleString('ko-KR')}`;
+}
+
+function editMetric(region, channel, field, currentVal){
+  const newVal = prompt(`${CH_LABEL[channel]} ${field==='target'?'목표':'실적'} 수정 (현재: ${currentVal.toLocaleString()} 만원)`, currentVal);
+  if(newVal === null) return;
+  const v = parseInt(newVal);
+  if(!isNaN(v) && v >= 0){
+    S.metrics[region][channel][field] = v;
+    saveData();
+    renderHeader();
+    renderRevenue();
+    if(document.getElementById('panel-overview').classList.contains('active')) renderOverview();
+  }
+}
+
+// ==================== TAB NAV ====================
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.getElementById(`panel-${tab}`).classList.add('active');
+    renderTab(tab);
+  });
+});
+
+function renderTab(tab){
+  const fns = {
+    overview: renderOverview,
+    revenue: renderRevenue,
+    ads: renderAds,
+    influencer: renderInfluencer,
+    tasks: renderTasks,
+    ideas: renderIdeas,
+    report: renderReport,
+  };
+  if(fns[tab]) fns[tab]();
+}
+
+// ==================== INIT ====================
+renderHeader();
+renderOverview();
+</script>
+</body>
+</html>
