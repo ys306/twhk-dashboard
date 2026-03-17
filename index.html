@@ -215,8 +215,8 @@ import{getDatabase,ref,onValue,set}from"https://www.gstatic.com/firebasejs/10.12
 const FB={apiKey:"AIzaSyBqbvek3T8PbKakOd-9dsrwyK1kQ6ifXaU",authDomain:"twhk-dashboard-4e2ae.firebaseapp.com",databaseURL:"https://twhk-dashboard-4e2ae-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"twhk-dashboard-4e2ae",storageBucket:"twhk-dashboard-4e2ae.firebasestorage.app",messagingSenderId:"454545580861",appId:"1:454545580861:web:06507d9ea95e2afa4cdb54"};
 const fbApp=initializeApp(FB);
 const db=getDatabase(fbApp);
-const ROOT=ref(db,"v5");
-const HIST_ROOT=ref(db,"v5_hist");
+const ROOT=ref(db,"v4");
+const HIST_ROOT=ref(db,"v4_hist");
 const ADMIN_PW="yeseul2025";
 const PRODS_DEF=["율무팩","제로팩","MTS","보라당근앰플"];
 
@@ -731,14 +731,14 @@ function renderGenericTab(tabKey,title,filterConfig,boardFn){
   const boardHtml=boardFn?boardFn(filtered,allRecs):"";
 
   // table
-  const adminEdit=window._isAdmin?`<button class="btn btn-ghost btn-sm" onclick="openSchemaEditor('${tabKey}')" title="필드 관리"><span class="admin-badge">관리자</span> 필드 관리</button>`:"";
+  const adminEdit=window._isAdmin?`<button class="btn btn-ghost btn-sm" onclick="openSchemaEditor('${tabKey}')"><span class="admin-badge">관리자</span> 필드 관리</button>`:"";
   const thHtml=schema.map(f=>`<th>${esc(f.label)}</th>`).join("")+"<th></th>";
   let rows=filtered.map(rec=>`<tr>${schema.map(f=>`<td>${renderCell(f,rec[f.id])}</td>`).join("")}<td><button class="btn btn-ghost btn-sm" onclick="editRecord('${tabKey}',${rec.id})">수정</button></td></tr>`).join("");
 
   p.innerHTML=`
   <div class="toolbar">
-    <div class="toolbar-left"><span class="sec-title">${title}</span>${filterConfig.month||filterConfig.week?"":`${adminEdit}`}</div>
-    <div class="toolbar-right">${adminEdit?adminEdit:""}<button class="btn btn-primary" onclick="addRecord('${tabKey}')">+ 추가</button></div>
+    <div class="toolbar-left"><span class="sec-title">${title}</span></div>
+    <div class="toolbar-right">${adminEdit}<button class="btn btn-primary" onclick="addRecord('${tabKey}')">+ 추가</button></div>
   </div>
   ${filterHtml}
   ${boardHtml}
@@ -790,9 +790,9 @@ function ctBoard(filtered){
 // ═══════════ TAB RENDERERS ═══════════
 function renderInfluencer(){renderGenericTab("influencer","🤝 인플루언서",{month:true,prod:true},infBoard);}
 function renderContent(){renderGenericTab("content","🎬 콘텐츠",{week:true,prod:true},ctBoard);}
-function renderPromo(){renderGenericTab("promo","🎁 프로모션",{},{});}
-function renderOnsite(){renderGenericTab("onsite","🛒 온사이트",{},{});}
-function renderReference(){renderGenericTab("reference","🔍 레퍼런스",{},{});}
+function renderPromo(){renderGenericTab("promo","🎁 프로모션",{},null);}
+function renderOnsite(){renderGenericTab("onsite","🛒 온사이트",{},null);}
+function renderReference(){renderGenericTab("reference","🔍 레퍼런스",{},null);}
 
 // ═══════════ SCHEMA EDITOR ═══════════
 window.openSchemaEditor=function(tabKey){
