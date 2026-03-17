@@ -174,6 +174,7 @@ tr:hover td{background:#fafbff;}
         <div id="user-badge"></div>
         <div id="header-kpis"></div>
         <button class="hdr-btn" onclick="openHistory()">📋 히스토리</button>
+        <button class="hdr-btn" onclick="openSnapshotPanel()">💾 백업</button>
         <button class="hdr-btn" onclick="logout()">로그아웃</button>
       </div>
     </div>
@@ -215,8 +216,9 @@ import{getDatabase,ref,onValue,set}from"https://www.gstatic.com/firebasejs/10.12
 const FB={apiKey:"AIzaSyBqbvek3T8PbKakOd-9dsrwyK1kQ6ifXaU",authDomain:"twhk-dashboard-4e2ae.firebaseapp.com",databaseURL:"https://twhk-dashboard-4e2ae-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"twhk-dashboard-4e2ae",storageBucket:"twhk-dashboard-4e2ae.firebasestorage.app",messagingSenderId:"454545580861",appId:"1:454545580861:web:06507d9ea95e2afa4cdb54"};
 const fbApp=initializeApp(FB);
 const db=getDatabase(fbApp);
-const ROOT=ref(db,"v4");
-const HIST_ROOT=ref(db,"v4_hist");
+const ROOT=ref(db,"v5");
+const HIST_ROOT=ref(db,"v5_hist");
+const SNAP_ROOT=ref(db,"v5_snapshots");
 const ADMIN_PW="yeseul2025";
 const PRODS_DEF=["율무팩","제로팩","MTS","보라당근앰플"];
 
@@ -336,6 +338,95 @@ async function save(desc,diff){
 }
 
 onValue(HIST_ROOT,(snap)=>{window._histData=snap.val()||{};if(document.getElementById("hist-overlay").classList.contains("open"))window._renderHistory();});
+
+// ── SNAPSHOT SYSTEM ──────────────────────────────────────
+let _snapData={};
+onValue(SNAP_ROOT,(snap)=>{_snapData=snap.val()||{};});
+
+async function takeSnapshot(label){
+  try{
+    const now=new Date();
+    const key=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}_${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}`;
+    const snapRef=ref(db,"v5_snapshots/"+key);
+    await set(snapRef,{data:JSON.parse(JSON.stringify(S)),label:label||"수동 백업",by:window._currentUser||"?",at:now.toISOString()});
+    return key;
+  }catch(e){console.error("snapshot failed",e);return null;}
+}
+
+// Auto-snapshot: every Monday on first login of the day
+async function autoSnapshotIfNeeded(){
+  const now=new Date();
+  const todayKey=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+  const lastAutoKey=localStorage.getItem("lastAutoSnapshot");
+  if(lastAutoKey===todayKey)return; // already done today
+  if(now.getDay()===1){ // Monday
+    await takeSnapshot("자동 주간 백업 (월요일)");
+    localStorage.setItem("lastAutoSnapshot",todayKey);
+  } else {
+    // also auto-snapshot every day but keep label as daily
+    const snapKeys=Object.keys(_snapData).filter(k=>k.startsWith("auto_daily"));
+    if(snapKeys.length===0||lastAutoKey!==todayKey){
+      await takeSnapshot("자동 일별 백업");
+      localStorage.setItem("lastAutoSnapshot",todayKey);
+    }
+  }
+}
+
+window.openSnapshotPanel=function(){
+  if(!window._isAdmin){alert("관리자만 접근 가능합니다");return;}
+  const snaps=Object.entries(_snapData).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,50);
+  let rows=snaps.map(([k,v])=>{
+    const d=new Date(v.at);
+    const dateStr=`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+    return `<tr>
+      <td class="text-muted text-xs">${dateStr}</td>
+      <td style="font-size:13px">${esc(v.label||"")}</td>
+      <td class="text-muted text-xs">${esc(v.by||"")}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="restoreSnapshot('${k}')">복구</button>
+        <button class="btn btn-ghost btn-sm" style="color:#ef4444;margin-left:4px" onclick="deleteSnapshot('${k}')">삭제</button>
+      </td>
+    </tr>`;
+  }).join("");
+  modal("📦 데이터 백업 · 복구",`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <span class="text-muted">최근 50개 · 매일/매주 자동 저장됨</span>
+      <button class="btn btn-primary btn-sm" onclick="manualSnapshot()">지금 백업</button>
+    </div>
+    <div class="tbl-wrap" style="max-height:400px;overflow-y:auto">
+      <table><thead><tr><th>시각</th><th>이름</th><th>저장자</th><th></th></tr></thead>
+      <tbody id="snap-rows">${rows||`<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:20px">저장된 백업이 없습니다</td></tr>`}</tbody>
+      </table>
+    </div>`,null);
+  // remove save button from footer
+  document.getElementById("modal-footer").innerHTML=`<button class="m-cancel" onclick="closeModal()">닫기</button>`;
+};
+
+window.manualSnapshot=async function(){
+  const label=prompt("백업 이름을 입력하세요 (엔터 = 수동 백업)","수동 백업")||"수동 백업";
+  const key=await takeSnapshot(label);
+  if(key)alert("✅ 백업 완료: "+key);
+  else alert("❌ 백업 실패");
+  window.openSnapshotPanel();
+};
+
+window.restoreSnapshot=function(key){
+  if(!confirm("⚠️ 이 시점으로 데이터를 복구할까요?\n현재 데이터는 '복구 전 자동 백업'으로 저장됩니다."))return;
+  const snap=_snapData[key];
+  if(!snap?.data){alert("복구 데이터를 찾을 수 없습니다");return;}
+  takeSnapshot("복구 전 자동 백업").then(()=>{
+    S=JSON.parse(JSON.stringify(snap.data));
+    save(`스냅샷 복구: ${snap.label}`).then(()=>{
+      alert("✅ 복구 완료!");
+      closeModal();renderHeader();rerenderCurrent();
+    });
+  });
+};
+
+window.deleteSnapshot=function(key){
+  if(!confirm("이 백업을 삭제할까요?"))return;
+  set(ref(db,"v5_snapshots/"+key),null).then(()=>window.openSnapshotPanel());
+};
 window._renderHistory=function(){
   const el=document.getElementById("history-list");
   const data=window._histData||{};
@@ -364,7 +455,14 @@ window._doLogin=function(pw){
   else{document.getElementById("login-error").style.display="block";document.getElementById("pw-input").value="";document.getElementById("pw-input").focus();}
 };
 if(window._pendingPw){window._doLogin(window._pendingPw);window._pendingPw=null;}
-function doShowApp(){document.getElementById("login-screen").style.display="none";document.getElementById("app").style.display="block";document.getElementById("sync-bar").style.display="flex";save("로그인");renderHeader();renderSales();}
+function doShowApp(){
+  document.getElementById("login-screen").style.display="none";
+  document.getElementById("app").style.display="block";
+  document.getElementById("sync-bar").style.display="flex";
+  save("로그인");
+  setTimeout(autoSnapshotIfNeeded, 3000); // delay to let data load first
+  renderHeader();renderSales();
+}
 
 // ── HELPERS ──
 function arr(x){return Array.isArray(x)?x:x?Object.values(x):[];}
@@ -903,6 +1001,9 @@ function renderSettings(){
   p.innerHTML=`
   <div class="toolbar"><div class="toolbar-left"><span class="sec-title">⚙️ 설정 (관리자 전용)</span></div></div>
   <div class="card mb-16">
+    <div class="row mb-12" style="justify-content:space-between"><span style="font-size:13px;font-weight:700">💾 데이터 백업 · 복구</span><button class="btn btn-primary btn-sm" onclick="openSnapshotPanel()">백업 관리</button></div>
+    <div class="text-muted mb-8">매일 자동 백업 · 매주 월요일 주간 백업 · 수동 백업 가능 · 언제든 복구 가능</div>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:12px;color:#16a34a;margin-bottom:20px">✅ 로그인 시 오늘 첫 접속이면 자동으로 백업됩니다</div>
     <div class="row mb-12" style="justify-content:space-between"><span style="font-size:13px;font-weight:700">👤 담당자 계정 관리</span><button class="btn btn-primary btn-sm" onclick="addUser()">+ 추가</button></div>
     <div class="tbl-wrap"><table><thead><tr><th>이름</th><th>역할</th><th>비밀번호</th><th></th></tr></thead><tbody>${uRows}</tbody></table></div>
   </div>
