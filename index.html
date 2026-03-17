@@ -572,7 +572,11 @@ function renderCell(f,val){
   if(val===undefined||val===null||val==="")return `<span class="text-muted">-</span>`;
   switch(f.type){
     case"checkbox":return val?`<span style="color:#22c55e;font-size:15px">✅</span>`:``;
-    case"link":return val?`<a href="${esc(val)}" target="_blank" style="color:#6366f1;font-size:12px">🔗 링크</a>`:`<span class="text-muted">-</span>`;
+    case"link":{
+      if(!val)return`<span class="text-muted">-</span>`;
+      const href=val.startsWith("http")?val:"https://"+val;
+      return`<a href="${esc(href)}" target="_blank" rel="noopener" style="color:#6366f1;font-size:12px">🔗 링크</a>`;
+    }
     case"dropdown":return stag(String(val));
     case"region_picker":return val?`<span class="chip">${esc(val)}</span>`:``;
     case"product_picker":return val?`<span class="chip">${esc(val)}</span>`:``;
@@ -733,7 +737,21 @@ function renderStrCard(prod,label,allMonthData){
   });
   const seen=new Set();allActions=allActions.filter(a=>{if(seen.has(a.id))return false;seen.add(a.id);return true;});
   const done=allActions.filter(a=>a.f_status==="진행 완료").length;const total=allActions.length;const pp=pct(done,total);
-  let stratSums=matchingStrats.map(mk=>{const st=allMonthData[mk];if(!st.summary)return"";const rl=st.region&&st.region!=="전체"?` <span class="chip">${esc(st.region)}</span>`:"";return `<div style="background:#f5f7ff;border-radius:8px;padding:10px 14px;font-size:12px;color:#64748b;line-height:1.7;margin-bottom:8px">📌 <b>${mk}</b>${rl} ${esc(st.summary)}</div>`;}).join("");
+  let stratSums=matchingStrats.map(mk=>{
+    const st=allMonthData[mk];if(!st.summary)return"";
+    const rl=st.region&&st.region!=="전체"?` <span class="chip">${esc(st.region)}</span>`:"";
+    const period=st.startMonth&&st.endMonth&&st.startMonth!==st.endMonth?`${st.startMonth} ~ ${st.endMonth}`:mk;
+    return `<div style="background:#f5f7ff;border-radius:8px;padding:10px 14px;font-size:12px;color:#64748b;line-height:1.7;margin-bottom:8px;position:relative">
+      <div class="row gap-8 mb-6" style="justify-content:space-between">
+        <div>📌 <b>${period}</b>${rl}</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="editStrategy('${esc(prod)}','${mk}')">✏️ 수정</button>
+          <button class="btn btn-ghost btn-sm" style="color:#ef4444" onclick="deleteStrategy('${esc(prod)}','${mk}')">삭제</button>
+        </div>
+      </div>
+      ${esc(st.summary)}
+    </div>`;
+  }).join("");
   // table headers from schema
   const thHtml=schema.map(f=>`<th>${esc(f.label)}</th>`).join("")+"<th></th>";
   let rows=allActions.map(a=>`<tr>${schema.map(f=>`<td>${renderCell(f,a[f.id])}</td>`).join("")}<td><button class="btn btn-ghost btn-sm" onclick="editAction('${esc(prod)}','${a._mk}',${a.id})">수정</button></td></tr>`).join("");
@@ -755,13 +773,38 @@ window.addStrategy=function(prod){
   const isCommon=prod==="__common__";
   modal(`${isCommon?"[공통]":esc(prod)} 전략 추가`,`<label>기간 시작</label><select id="str-sm">${monthOpts(curMonth(),false)}</select><label>기간 종료</label><select id="str-em">${monthOpts(curMonth(),false)}</select><label>지역</label><select id="str-reg"><option value="전체">전체</option>${["TW","HK"].map(r=>`<option>${r}</option>`).join("")}</select><label>전략 내용</label><textarea id="str-su" rows="5"></textarea>`,()=>{
     const sm=gv("str-sm"),em=gv("str-em"),reg=gv("str-reg"),su=gv("str-su");if(!su)return;
-    const key=sm;
-    if(isCommon){if(!S.commonStrategy)S.commonStrategy={};if(!S.commonStrategy[key])S.commonStrategy[key]={summary:"",actions:[],startMonth:sm,endMonth:em,region:reg};S.commonStrategy[key].summary=su;S.commonStrategy[key].startMonth=sm;S.commonStrategy[key].endMonth=em;S.commonStrategy[key].region=reg;}
-    else{if(!S.strategy)S.strategy={};if(!S.strategy[prod])S.strategy[prod]={};if(!S.strategy[prod][key])S.strategy[prod][key]={summary:"",actions:[],startMonth:sm,endMonth:em,region:reg};S.strategy[prod][key].summary=su;S.strategy[prod][key].startMonth=sm;S.strategy[prod][key].endMonth=em;S.strategy[prod][key].region=reg;}
+    // unique key = startMonth + region abbreviation + timestamp to avoid collision
+    const key=`${sm}_${reg}_${Date.now()}`;
+    if(isCommon){
+      if(!S.commonStrategy)S.commonStrategy={};
+      S.commonStrategy[key]={summary:su,actions:[],startMonth:sm,endMonth:em,region:reg};
+    }else{
+      if(!S.strategy)S.strategy={};if(!S.strategy[prod])S.strategy[prod]={};
+      S.strategy[prod][key]={summary:su,actions:[],startMonth:sm,endMonth:em,region:reg};
+    }
     save(`전략추가: ${prod}`);renderStrategy();closeModal();
   });
 };
-window.addAction=function(prod){
+window.editStrategy=function(prod,key){
+  const isCommon=prod==="__common__";
+  const st=isCommon?(S.commonStrategy||{})[key]:(S.strategy?.[prod]||{})[key];
+  if(!st)return;
+  modal(`전략 수정`,`
+    <label>기간 시작</label><select id="str-sm">${monthOpts(st.startMonth||curMonth(),false)}</select>
+    <label>기간 종료</label><select id="str-em">${monthOpts(st.endMonth||curMonth(),false)}</select>
+    <label>지역</label><select id="str-reg"><option value="전체"${(st.region||"전체")==="전체"?" selected":""}>전체</option>${["TW","HK"].map(r=>`<option${st.region===r?" selected":""}>${r}</option>`).join("")}</select>
+    <label>전략 내용</label><textarea id="str-su" rows="5">${esc(st.summary||"")}</textarea>`,()=>{
+    st.startMonth=gv("str-sm");st.endMonth=gv("str-em");st.region=gv("str-reg");st.summary=gv("str-su");
+    save(`전략수정: ${prod}`);renderStrategy();closeModal();
+  },true,()=>deleteStrategy(prod,key));
+};
+window.deleteStrategy=function(prod,key){
+  if(!confirm("이 전략을 삭제할까요? 연결된 액션도 모두 삭제됩니다."))return;
+  const isCommon=prod==="__common__";
+  if(isCommon){if(S.commonStrategy)delete S.commonStrategy[key];}
+  else{if(S.strategy?.[prod])delete S.strategy[prod][key];}
+  save(`전략삭제: ${prod}`);renderStrategy();
+};
   const isCommon=prod==="__common__";const key=strMonth==="all"?curMonth():strMonth;
   const schema=getSchema("strategy_action");
   modal("액션 추가",buildFormHtml(schema,null),()=>{
