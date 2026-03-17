@@ -134,8 +134,8 @@ tr:hover td{background:#fafbff;}
   <div id="login-box">
     <h1>🔐 TW · HK 운영 시트</h1>
     <p>비밀번호를 입력하면 자동으로 담당자가 인식됩니다</p>
-    <input type="password" id="pw-input" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')tryLogin()">
-    <button id="login-btn" onclick="tryLogin()">로그인</button>
+    <input type="password" id="pw-input" placeholder="비밀번호 입력" >
+    <button id="login-btn" >로그인</button>
     <div id="login-error">비밀번호가 올바르지 않습니다</div>
   </div>
 </div>
@@ -162,7 +162,7 @@ tr:hover td{background:#fafbff;}
   </div>
 </div>
 
-<div id="app">
+<div id="app" style="display:none">
   <div id="header">
     <div id="header-top">
       <div>
@@ -201,24 +201,23 @@ tr:hover td{background:#fafbff;}
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script>
 window._currentUser=null;window._isAdmin=false;
-window.tryLogin=function(){const pw=document.getElementById("pw-input").value;if(window._fbReady){window._doLogin(pw);}else{window._pendingPw=pw;}};
-window.logout=function(){window._currentUser=null;window._isAdmin=false;document.getElementById("login-screen").style.display="flex";document.getElementById("app").style.display="none";document.getElementById("sync-bar").style.display="none";document.getElementById("pw-input").value="";document.getElementById("login-error").style.display="none";};
-window.openHistory=function(){document.getElementById("hist-overlay").classList.add("open");window._renderHistory();};
-window.closeHistory=function(){document.getElementById("hist-overlay").classList.remove("open");};
 </script>
 
-<script type="module">
-import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import{getDatabase,ref,onValue,set}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-const FB={apiKey:"AIzaSyBqbvek3T8PbKakOd-9dsrwyK1kQ6ifXaU",authDomain:"twhk-dashboard-4e2ae.firebaseapp.com",databaseURL:"https://twhk-dashboard-4e2ae-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"twhk-dashboard-4e2ae",storageBucket:"twhk-dashboard-4e2ae.firebasestorage.app",messagingSenderId:"454545580861",appId:"1:454545580861:web:06507d9ea95e2afa4cdb54"};
-const fbApp=initializeApp(FB);
-const db=getDatabase(fbApp);
-const ROOT=ref(db,"v5");
-const HIST_ROOT=ref(db,"v5_hist");
-const SNAP_ROOT=ref(db,"v5_snapshots");
+<script>
+// Firebase compat SDK
+firebase.initializeApp({apiKey:"AIzaSyBqbvek3T8PbKakOd-9dsrwyK1kQ6ifXaU",authDomain:"twhk-dashboard-4e2ae.firebaseapp.com",databaseURL:"https://twhk-dashboard-4e2ae-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"twhk-dashboard-4e2ae",storageBucket:"twhk-dashboard-4e2ae.firebasestorage.app",messagingSenderId:"454545580861",appId:"1:454545580861:web:06507d9ea95e2afa4cdb54"});
+const db=firebase.database();
+const ROOT=db.ref("v5");
+const HIST_ROOT=db.ref("v5_hist");
+const SNAP_ROOT=db.ref("v5_snapshots");
+// compat helper wrappers to keep existing code working
+function ref(database,path){return database.ref(path);}
+function onValue(r,cb,errCb){r.on("value",snap=>cb(snap),errCb);return r;}
+async function set(r,val){return r.set(val);}
 const ADMIN_PW="yeseul2025";
 const PRODS_DEF=["율무팩","제로팩","MTS","보라당근앰플"];
 
@@ -332,7 +331,7 @@ async function save(desc,diff){
   _saving=true;syncUI("syncing");
   try{
     await set(ROOT,S);syncUI("ok");
-    if(desc){const k="h"+Date.now();await set(ref(db,"v5_hist/"+k),{who:window._currentUser||"?",what:desc,when:new Date().toISOString(),diff:diff||null});}
+    if(desc){const k="h"+Date.now();await db.ref("v5_hist/"+k).set({who:window._currentUser||"?",what:desc,when:new Date().toISOString(),diff:diff||null});}
   }catch(e){syncUI("error");}
   _saving=false;
 }
@@ -347,8 +346,7 @@ async function takeSnapshot(label){
   try{
     const now=new Date();
     const key=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}_${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}`;
-    const snapRef=ref(db,"v5_snapshots/"+key);
-    await set(snapRef,{data:JSON.parse(JSON.stringify(S)),label:label||"수동 백업",by:window._currentUser||"?",at:now.toISOString()});
+    await db.ref("v5_snapshots/"+key).set({data:JSON.parse(JSON.stringify(S)),label:label||"수동 백업",by:window._currentUser||"?",at:now.toISOString()});
     return key;
   }catch(e){console.error("snapshot failed",e);return null;}
 }
@@ -425,7 +423,7 @@ window.restoreSnapshot=function(key){
 
 window.deleteSnapshot=function(key){
   if(!confirm("이 백업을 삭제할까요?"))return;
-  set(ref(db,"v5_snapshots/"+key),null).then(()=>window.openSnapshotPanel());
+  db.ref("v5_snapshots/"+key).set(null).then(()=>window.openSnapshotPanel());
 };
 window._renderHistory=function(){
   const el=document.getElementById("history-list");
@@ -443,26 +441,36 @@ window._renderHistory=function(){
 };
 window.toggleDiff=function(k){const el=document.getElementById("diff-"+k);if(el)el.classList.toggle("open");};
 
-onValue(ROOT,(snap)=>{if(_saving)return;const d=snap.val();if(d){S=d;syncUI("ok");}else{save();}renderHeader();rerenderCurrent();},(e)=>syncUI("error"));
+onValue(ROOT,(snap)=>{
+  if(_saving)return;
+  const d=snap.val();
+  if(d){S=d;syncUI("ok");}
+  else if(window._currentUser){save();}
+  if(window._currentUser){renderHeader();rerenderCurrent();}
+},(e)=>syncUI("error"));
 function rerenderCurrent(){const a=document.querySelector(".tab-btn.active");if(a)renderTab(a.dataset.tab);}
 
-// ── LOGIN ──
-window._fbReady=true;
-window._doLogin=function(pw){
-  const users=arr(S.settings?.users||[]);
-  const user=users.find(x=>x.pw===pw)||(pw===ADMIN_PW?{name:"예슬(관리자)",isAdmin:true}:null);
-  if(user){window._currentUser=user.name;window._isAdmin=!!user.isAdmin;doShowApp();}
-  else{document.getElementById("login-error").style.display="block";document.getElementById("pw-input").value="";document.getElementById("pw-input").focus();}
-};
-if(window._pendingPw){window._doLogin(window._pendingPw);window._pendingPw=null;}
 function doShowApp(){
   document.getElementById("login-screen").style.display="none";
   document.getElementById("app").style.display="block";
   document.getElementById("sync-bar").style.display="flex";
   save("로그인");
-  setTimeout(autoSnapshotIfNeeded, 3000); // delay to let data load first
+  setTimeout(autoSnapshotIfNeeded,3000);
   renderHeader();renderSales();
 }
+
+// Now that all functions are ready, expose processLogin
+window._processLogin=function(pw){
+  if(pw==="yeseul2025"){
+    window._currentUser=null;window._isAdmin=false;doShowApp();return;
+  }
+  const users=arr(S.settings?.users||[]);
+  const user=users.find(u=>u.pw===pw);
+  if(user){window._currentUser=user.name;window._isAdmin=!!user.isAdmin;doShowApp();}
+  else{document.getElementById("login-error").style.display="block";document.getElementById("pw-input").value="";document.getElementById("pw-input").focus();}
+};
+// Process any pw entered before this ran
+if(window._pendingPw){window._processLogin(window._pendingPw);window._pendingPw=null;}
 
 // ── HELPERS ──
 function arr(x){return Array.isArray(x)?x:x?Object.values(x):[];}
@@ -740,7 +748,7 @@ function renderStrCard(prod,label,allMonthData){
   let stratSums=matchingStrats.map(mk=>{
     const st=allMonthData[mk];if(!st.summary)return"";
     const rl=st.region&&st.region!=="전체"?` <span class="chip">${esc(st.region)}</span>`:"";
-    const period=st.startMonth&&st.endMonth&&st.startMonth!==st.endMonth?`${st.startMonth} ~ ${st.endMonth}`:mk;
+    const period=st.startMonth&&st.endMonth&&st.startMonth!==st.endMonth?`${st.startMonth} ~ ${st.endMonth}`:(st.startMonth||st.endMonth||mk.split("_")[0]);
     return `<div style="background:#f5f7ff;border-radius:8px;padding:10px 14px;font-size:12px;color:#64748b;line-height:1.7;margin-bottom:8px;position:relative">
       <div class="row gap-8 mb-6" style="justify-content:space-between">
         <div>📌 <b>${period}</b>${rl}</div>
@@ -805,6 +813,7 @@ window.deleteStrategy=function(prod,key){
   else{if(S.strategy?.[prod])delete S.strategy[prod][key];}
   save(`전략삭제: ${prod}`);renderStrategy();
 };
+window.addAction=function(prod){
   const isCommon=prod==="__common__";const key=strMonth==="all"?curMonth():strMonth;
   const schema=getSchema("strategy_action");
   modal("액션 추가",buildFormHtml(schema,null),()=>{
@@ -1089,7 +1098,7 @@ window.editProdsRegion=function(r){
   });
 };
 
-// ── TAB NAV ──
+// ── GLOBAL BINDINGS ──
 function renderTab(tab){({sales:renderSales,strategy:renderStrategy,influencer:renderInfluencer,content:renderContent,promo:renderPromo,onsite:renderOnsite,reference:renderReference,settings:renderSettings})[tab]?.();}
 document.querySelectorAll(".tab-btn").forEach(btn=>{
   btn.addEventListener("click",()=>{
@@ -1099,6 +1108,52 @@ document.querySelectorAll(".tab-btn").forEach(btn=>{
     document.getElementById("panel-"+tab).classList.add("active");renderTab(tab);
   });
 });
+
+// ── LOGIN ──────────────────────────────────────────────
+// Passwords: admin=yeseul2025, default user=partjang2025
+function doLogin(pw){
+  if(pw==="yeseul2025"){
+    window._currentUser="예슬(관리자)";window._isAdmin=true;
+    document.getElementById("login-screen").style.display="none";
+    document.getElementById("app").style.display="block";
+    document.getElementById("sync-bar").style.display="flex";
+    save("로그인");setTimeout(autoSnapshotIfNeeded,3000);
+    renderHeader();renderSales();
+    return;
+  }
+  const users=arr(S.settings?.users||[]);
+  const user=users.find(u=>u.pw===pw);
+  if(user){
+    window._currentUser=user.name;window._isAdmin=!!user.isAdmin;
+    document.getElementById("login-screen").style.display="none";
+    document.getElementById("app").style.display="block";
+    document.getElementById("sync-bar").style.display="flex";
+    save("로그인");setTimeout(autoSnapshotIfNeeded,3000);
+    renderHeader();renderSales();
+  } else {
+    document.getElementById("login-error").style.display="block";
+    document.getElementById("pw-input").value="";
+    document.getElementById("pw-input").focus();
+  }
+}
+
+document.getElementById("login-btn").addEventListener("click",function(){
+  doLogin(document.getElementById("pw-input").value);
+});
+document.getElementById("pw-input").addEventListener("keydown",function(e){
+  if(e.key==="Enter") doLogin(this.value);
+});
+
+window.logout=function(){
+  window._currentUser=null;window._isAdmin=false;
+  document.getElementById("login-screen").style.display="flex";
+  document.getElementById("app").style.display="none";
+  document.getElementById("sync-bar").style.display="none";
+  document.getElementById("pw-input").value="";
+  document.getElementById("login-error").style.display="none";
+};
+window.openHistory=function(){document.getElementById("hist-overlay").classList.add("open");window._renderHistory();};
+window.closeHistory=function(){document.getElementById("hist-overlay").classList.remove("open");};
 </script>
 </body>
 </html>
