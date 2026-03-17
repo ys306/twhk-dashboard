@@ -52,7 +52,7 @@ body{min-height:100vh;background:#f0f4ff;color:#1e2535;font-family:'Apple SD Got
 .hist-diff.open{display:block;}
 .diff-before{color:#ef4444;text-decoration:line-through;}
 .diff-after{color:#16a34a;}
-#app{display:none;}
+#app{display:block;}
 #header{background:#fff;border-bottom:1px solid #e2e9f5;padding:16px 24px 0;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(99,102,241,.07);}
 #header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
 .h-sub{font-size:10px;letter-spacing:3px;color:#b0bdd4;text-transform:uppercase;margin-bottom:3px;}
@@ -220,9 +220,7 @@ window._currentUser="예슬(관리자)";window._isAdmin=true;window._isViewer=fa
 // Storage: localStorage primary, Firebase sync secondary
 const LS_KEY="twhk_v5", LS_HIST="twhk_v5_hist", LS_SNAP="twhk_v5_snap";
 
-// Load from localStorage immediately - no waiting
-try{const d=localStorage.getItem(LS_KEY);if(d)S=JSON.parse(d);}catch(e){}
-window._histData=(function(){try{return JSON.parse(localStorage.getItem(LS_HIST)||"{}");}catch(e){return {};}})();
+// localStorage loaded after S declaration below
 
 let _saving=false;
 function syncUI(s){
@@ -271,7 +269,7 @@ function _initFirebase(){
   }catch(e){console.log("Firebase optional - using localStorage only");}
 }
 // Try Firebase after page renders
-// Firebase disabled
+setTimeout(_initFirebase,500);
 
 function autoSnapshotIfNeeded(){
   try{
@@ -401,51 +399,11 @@ function makeDefault(){
 }
 
 let S=makeDefault();
-// _saving and _histData declared in storage init above
+// Load from localStorage (overrides defaults)
+try{const d=localStorage.getItem(LS_KEY);if(d)S=JSON.parse(d);}catch(e){}
+window._histData=(function(){try{return JSON.parse(localStorage.getItem(LS_HIST)||"{}");} catch(e){return {};}})();
 
-function syncUI(s){const dot=document.getElementById("sync-dot"),txt=document.getElementById("sync-txt");if(!dot)return;dot.className=s==="ok"?"":s==="syncing"?"syncing":"error";txt.textContent=s==="ok"?"실시간 동기화":s==="syncing"?"저장 중...":"연결 오류";}
-async function save(desc,diff){
-  _saving=true;syncUI("syncing");
-  try{
-    await set(ROOT,S);syncUI("ok");
-    if(desc){const k="h"+Date.now();await db.ref("v5_hist/"+k).set({who:window._currentUser||"?",what:desc,when:new Date().toISOString(),diff:diff||null});}
-  }catch(e){syncUI("error");}
-  _saving=false;
-}
-
-// hist listener in localStorage mode
-
-// ── SNAPSHOT SYSTEM ──────────────────────────────────────
-let _snapData={};
-
-
-async function takeSnapshot(label){
-  try{
-    const now=new Date();
-    const key=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}_${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}`;
-    await db.ref("v5_snapshots/"+key).set({data:JSON.parse(JSON.stringify(S)),label:label||"수동 백업",by:window._currentUser||"?",at:now.toISOString()});
-    return key;
-  }catch(e){console.error("snapshot failed",e);return null;}
-}
-
-// Auto-snapshot: every Monday on first login of the day
-async function autoSnapshotIfNeeded(){
-  const now=new Date();
-  const todayKey=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
-  const lastAutoKey=localStorage.getItem("lastAutoSnapshot");
-  if(lastAutoKey===todayKey)return; // already done today
-  if(now.getDay()===1){ // Monday
-    await takeSnapshot("자동 주간 백업 (월요일)");
-    localStorage.setItem("lastAutoSnapshot",todayKey);
-  } else {
-    // also auto-snapshot every day but keep label as daily
-    const snapKeys=Object.keys(_snapData).filter(k=>k.startsWith("auto_daily"));
-    if(snapKeys.length===0||lastAutoKey!==todayKey){
-      await takeSnapshot("자동 일별 백업");
-      localStorage.setItem("lastAutoSnapshot",todayKey);
-    }
-  }
-}
+// duplicate firebase functions removed
 
 window.openSnapshotPanel=function(){
   if(!window._isAdmin){alert("관리자만 접근 가능합니다");return;}
@@ -500,7 +458,7 @@ window.restoreSnapshot=function(key){
 
 window.deleteSnapshot=function(key){
   if(!confirm("이 백업을 삭제할까요?"))return;
-  db.ref("v5_snapshots/"+key).set(null).then(()=>window.openSnapshotPanel());
+  delete _snapData[key];try{localStorage.setItem(LS_SNAP,JSON.stringify(_snapData));}catch(e){}window.openSnapshotPanel();
 };
 window._renderHistory=function(){
   const el=document.getElementById("history-list");
@@ -524,6 +482,13 @@ function rerenderCurrent(){const a=document.querySelector(".tab-btn.active");if(
 // ── GLOBAL REGION FILTER ──
 window.setGlobalRegion=function(r){
   window._globalRegion=r;
+  // 각 탭 필터도 동기화 (버튼 활성화 표시용)
+  const reg=r==="TW"?"TW":r==="HK"?"HK":"ALL";
+  ["influencer","content","promo","onsite","reference"].forEach(tab=>{
+    if(!tabFilters[tab])tabFilters[tab]={};
+    tabFilters[tab].reg=reg;
+  });
+  strFilter=reg;
   renderHeader();
   rerenderCurrent();
 };
@@ -796,11 +761,11 @@ function renderSales(){
   p.innerHTML=`
   <div class="toolbar"><div class="toolbar-left"><span class="sec-title">📊 성과</span></div>
   <div class="toolbar-right"><button class="btn btn-ghost btn-sm" onclick="openSalesSettings()">⚙️ 제품/설정</button></div></div>
-  <div class="filter-bar">
+  ${(window._globalRegion||"ALL")==="ALL"?`<div class="filter-bar">
     <button class="filter-pill${salesFilter==="ALL"?" active":""}" onclick="setSalesFilter('ALL')">전체</button>
     <button class="filter-pill${salesFilter==="TW"?" active":""}" onclick="setSalesFilter('TW')">🇹🇼 대만</button>
     <button class="filter-pill${salesFilter==="HK"?" active":""}" onclick="setSalesFilter('HK')">🇭🇰 홍콩</button>
-  </div>
+  </div>`:""}
   ${summaryCards}
   <div class="text-xs text-muted mb-8">💡 저장 시각 기준 자동 계산 · 카드 클릭으로 전체 수정</div>
   <div class="tbl-wrap"><table><thead><tr><th>제품</th><th>지역</th><th>매출목표</th><th>실적</th><th>기준</th><th>예상달성</th><th>CM목표</th><th>CM실적</th><th>CM예상달성</th><th></th></tr></thead><tbody>${tableRows}</tbody></table></div>`;
@@ -847,11 +812,11 @@ function renderStrategy(){
   let html=`<div class="toolbar"><div class="toolbar-left"><span class="sec-title">🎯 전략</span>
     <select class="sel" onchange="setStrMonth(this.value)"><option value="all"${strMonth==="all"?" selected":""}>전체</option>${monthOpts(strMonth,false)}</select>
   </div></div>
-  <div class="filter-bar">
+  ${(window._globalRegion||"ALL")==="ALL"?`<div class="filter-bar">
     <button class="filter-pill${strFilter==="ALL"?" active":""}" onclick="setStrFilter('ALL')">전체</button>
     <button class="filter-pill${strFilter==="TW"?" active":""}" onclick="setStrFilter('TW')">🇹🇼 대만</button>
     <button class="filter-pill${strFilter==="HK"?" active":""}" onclick="setStrFilter('HK')">🇭🇰 홍콩</button>
-  </div>`;
+  </div>`:""}`;
   html+=renderStrCard("__common__","[공통] 전체 전략",S.commonStrategy||{});
   visibleProds().forEach(prod=>{
     const gr=window._globalRegion||"ALL";
@@ -1005,7 +970,8 @@ function renderGenericTab(tabKey,title,filterConfig,boardFn){
   });
 
   // filter bar
-  let filterHtml=`<div class="filter-bar">
+  const _gr=window._globalRegion||"ALL";
+  let filterHtml=_gr!=="ALL"?"":`<div class="filter-bar">
     <button class="filter-pill${f.reg==="ALL"?" active":""}" onclick="setTabFilter('${tabKey}','reg','ALL')">전체 국가</button>
     <button class="filter-pill${f.reg==="TW"?" active":""}" onclick="setTabFilter('${tabKey}','reg','TW')">🇹🇼 대만</button>
     <button class="filter-pill${f.reg==="HK"?" active":""}" onclick="setTabFilter('${tabKey}','reg','HK')">🇭🇰 홍콩</button>
