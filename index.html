@@ -261,8 +261,8 @@ const DEFAULT_SCHEMAS={
     {id:"f_start_date",label:"시작일",type:"date"},
     {id:"f_end_date",label:"종료일",type:"date"},
     {id:"f_summary",label:"내용 요약",type:"memo"},
-    {id:"f_target",label:"목표 매출 (만원)",type:"number"},
-    {id:"f_actual",label:"실적 매출 (만원)",type:"number"},
+    {id:"f_target",label:"목표 매출 (원)",type:"number"},
+    {id:"f_actual",label:"실적 매출 (원)",type:"number"},
     {id:"f_good",label:"잘한 것 (회고)",type:"memo"},
     {id:"f_bad",label:"아쉬웠던 것 (회고)",type:"memo"},
     {id:"f_note",label:"메모",type:"memo"}
@@ -488,7 +488,11 @@ function getSchema(tabKey){return arr((S.schemas||{})[tabKey]||DEFAULT_SCHEMAS[t
 function selOpts(opts,val){return opts.map(o=>`<option${String(val||"")===String(o)?" selected":""}>${esc(o)}</option>`).join("");}
 function isActive(t){return document.getElementById("panel-"+t)?.classList.contains("active");}
 
-function calcUpdateDay(updatedAt){if(!updatedAt)return 0;return new Date(updatedAt).getDate();}
+function calcUpdateDay(updatedAt){
+  if(!updatedAt)return 0;
+  const d=new Date(updatedAt).getDate();
+  return Math.max(d-1,1); // 저장일 기준 전날까지 데이터 반영
+}
 function projRevenue(actual,ud,totalDays){if(!ud||ud<=0)return 0;return actual/ud*totalDays;}
 
 function curMonth(){const t=new Date();return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}`;}
@@ -677,7 +681,7 @@ function renderSales(){
 window.setSalesFilter=function(f){salesFilter=f;renderSales();};
 window.openEditOverall=function(r){
   const d=(S.salesOverall||{})[r]||{};const label=r==="tw"?"🇹🇼 대만":"🇭🇰 홍콩";
-  modal(`${label} 전체 성과 수정`,`<label>매출 목표 (만원)</label><input id="ov-rt" type="number" value="${d.targetRevenue||0}"><label>매출 실적 (만원)</label><input id="ov-ra" type="number" value="${d.actualRevenue||0}"><label>CM 목표 (만원)</label><input id="ov-ct" type="number" value="${d.targetCM||0}"><label>CM 실적 (만원)</label><input id="ov-ca" type="number" value="${d.actualCM||0}"><div class="text-muted mt-8">저장 시각 기준 자동 계산</div>`,()=>{
+  modal(`${label} 전체 성과 수정`,`<label>매출 목표 (원)</label><input id="ov-rt" type="number" value="${d.targetRevenue||0}"><label>매출 실적 (원)</label><input id="ov-ra" type="number" value="${d.actualRevenue||0}"><label>CM 목표 (원)</label><input id="ov-ct" type="number" value="${d.targetCM||0}"><label>CM 실적 (원)</label><input id="ov-ca" type="number" value="${d.actualCM||0}"><div class="text-muted mt-8">저장 시각 기준 자동 계산</div>`,()=>{
     if(!S.salesOverall)S.salesOverall={tw:{},hk:{}};
     const before={...d};
     S.salesOverall[r]={targetRevenue:gn("ov-rt"),actualRevenue:gn("ov-ra"),targetCM:gn("ov-ct"),actualCM:gn("ov-ca"),updatedAt:new Date().toISOString()};
@@ -687,7 +691,7 @@ window.openEditOverall=function(r){
 };
 window.editSalesRow=function(prod,r){
   const d=(S.sales?.[prod]||{})[r]||{};const label=r==="tw"?"🇹🇼 대만":"🇭🇰 홍콩";
-  modal(`${esc(prod)} · ${label} 수정`,`<label>매출 목표 (만원)</label><input id="s-rt" type="number" value="${d.targetRevenue||0}"><label>매출 실적 (만원)</label><input id="s-ra" type="number" value="${d.actualRevenue||0}"><label>CM 목표 (만원)</label><input id="s-ct" type="number" value="${d.targetCM||0}"><label>CM 실적 (만원)</label><input id="s-ca" type="number" value="${d.actualCM||0}">`,()=>{
+  modal(`${esc(prod)} · ${label} 수정`,`<label>매출 목표 (원)</label><input id="s-rt" type="number" value="${d.targetRevenue||0}"><label>매출 실적 (원)</label><input id="s-ra" type="number" value="${d.actualRevenue||0}"><label>CM 목표 (원)</label><input id="s-ct" type="number" value="${d.targetCM||0}"><label>CM 실적 (원)</label><input id="s-ca" type="number" value="${d.actualCM||0}">`,()=>{
     if(!S.sales)S.sales={};if(!S.sales[prod])S.sales[prod]={};
     const before={...(S.sales[prod][r]||{})};
     S.sales[prod][r]={targetRevenue:gn("s-rt"),actualRevenue:gn("s-ra"),targetCM:gn("s-ct"),actualCM:gn("s-ca"),updatedAt:new Date().toISOString()};
