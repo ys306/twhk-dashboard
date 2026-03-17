@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TW · HK 마케팅 운영 시트</title>
+<title>대만·홍콩 대시보드</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{min-height:100vh;background:#f0f4ff;color:#1e2535;font-family:'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;font-size:14px;}
@@ -62,6 +62,10 @@ body{min-height:100vh;background:#f0f4ff;color:#1e2535;font-family:'Apple SD Got
 #header-date{font-size:11px;color:#b0bdd4;}
 #user-badge{background:#eef2ff;border:1px solid #e0e7ff;border-radius:20px;padding:4px 12px;font-size:12px;color:#6366f1;font-weight:700;}
 #header-kpis{display:flex;gap:8px;}
+#global-region-filter{display:flex;gap:4px;}
+.grp-pill{padding:4px 12px;border-radius:20px;border:1.5px solid #e2e9f5;background:#fff;font-size:11px;font-weight:700;color:#94a3b8;cursor:pointer;font-family:inherit;transition:all .15s;}
+.grp-pill:hover{border-color:#6366f1;color:#6366f1;}
+.grp-pill.active{background:#6366f1;border-color:#6366f1;color:#fff;}
 .kpi-badge{background:#f5f7ff;border:1px solid #e2e9f5;border-radius:8px;padding:6px 12px;text-align:center;min-width:90px;cursor:pointer;transition:border-color .15s;}
 .kpi-badge:hover{border-color:#6366f1;}
 .kpi-label{font-size:9px;color:#b0bdd4;}
@@ -126,11 +130,15 @@ tr:hover td{background:#fafbff;}
 .schema-drag{color:#94a3b8;cursor:grab;font-size:16px;}
 .admin-badge{background:#fef3c7;color:#d97706;border:1px solid #fde68a;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px;}
 @media(max-width:700px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}#content{padding:12px;}#header{padding:12px 12px 0;}#history-panel{width:100%;}}
+.grp-pill{padding:4px 12px;border-radius:20px;border:1.5px solid #e2e9f5;background:#fff;font-size:11px;font-weight:700;color:#94a3b8;cursor:pointer;font-family:inherit;transition:all .15s;}
+.grp-pill:hover{border-color:#6366f1;color:#6366f1;}
+.grp-pill.active{background:#6366f1;border-color:#6366f1;color:#fff;}
+#global-region-filter{display:flex;gap:4px;}
 </style>
 </head>
 <body>
 
-<div id="login-screen">
+<div id="login-screen" style="display:none">
   <div id="login-box">
     <h1>🔐 TW · HK 운영 시트</h1>
     <p>비밀번호를 입력하면 자동으로 담당자가 인식됩니다</p>
@@ -140,7 +148,7 @@ tr:hover td{background:#fafbff;}
   </div>
 </div>
 
-<div id="sync-bar" style="display:none">
+<div id="sync-bar" style="display:flex">
   <div id="sync-dot"></div><span id="sync-txt">연결 중...</span>
 </div>
 
@@ -162,16 +170,17 @@ tr:hover td{background:#fafbff;}
   </div>
 </div>
 
-<div id="app" style="display:none">
+<div id="app">
   <div id="header">
     <div id="header-top">
       <div>
         <div class="h-sub">TW · HK Region · Marketing OS</div>
-        <div class="h-title">대만 · 홍콩 <span>마케팅 운영 시트</span></div>
+        <div class="h-title">대만·홍콩 <span>대시보드</span></div>
       </div>
       <div id="header-right">
         <div id="header-date"></div>
         <div id="user-badge"></div>
+        <div id="global-region-filter"></div>
         <div id="header-kpis"></div>
         <button class="hdr-btn" onclick="openHistory()">📋 히스토리</button>
         <button class="hdr-btn" onclick="openSnapshotPanel()">💾 백업</button>
@@ -179,6 +188,7 @@ tr:hover td{background:#fafbff;}
       </div>
     </div>
     <div id="tabs">
+      <button class="tab-btn" data-tab="guide">📖 가이드</button>
       <button class="tab-btn active" data-tab="sales">📊 성과</button>
       <button class="tab-btn" data-tab="strategy">🎯 전략</button>
       <button class="tab-btn" data-tab="influencer">🤝 인플루언서</button>
@@ -190,6 +200,7 @@ tr:hover td{background:#fafbff;}
     </div>
   </div>
   <div id="content">
+    <div id="panel-guide" class="panel"></div>
     <div id="panel-sales" class="panel active"></div>
     <div id="panel-strategy" class="panel"></div>
     <div id="panel-influencer" class="panel"></div>
@@ -201,23 +212,90 @@ tr:hover td{background:#fafbff;}
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script>
-window._currentUser=null;window._isAdmin=false;
+window._currentUser="예슬(관리자)";window._isAdmin=true;window._isViewer=false;window._globalRegion="ALL";
 </script>
 
 <script>
-// Firebase compat SDK
-firebase.initializeApp({apiKey:"AIzaSyBqbvek3T8PbKakOd-9dsrwyK1kQ6ifXaU",authDomain:"twhk-dashboard-4e2ae.firebaseapp.com",databaseURL:"https://twhk-dashboard-4e2ae-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"twhk-dashboard-4e2ae",storageBucket:"twhk-dashboard-4e2ae.firebasestorage.app",messagingSenderId:"454545580861",appId:"1:454545580861:web:06507d9ea95e2afa4cdb54"});
-const db=firebase.database();
-const ROOT=db.ref("v5");
-const HIST_ROOT=db.ref("v5_hist");
-const SNAP_ROOT=db.ref("v5_snapshots");
-// compat helper wrappers to keep existing code working
-function ref(database,path){return database.ref(path);}
-function onValue(r,cb,errCb){r.on("value",snap=>cb(snap),errCb);return r;}
-async function set(r,val){return r.set(val);}
+// Storage: localStorage primary, Firebase sync secondary
+const LS_KEY="twhk_v5", LS_HIST="twhk_v5_hist", LS_SNAP="twhk_v5_snap";
+
+// Load from localStorage immediately - no waiting
+try{const d=localStorage.getItem(LS_KEY);if(d)S=JSON.parse(d);}catch(e){}
+window._histData=(function(){try{return JSON.parse(localStorage.getItem(LS_HIST)||"{}");}catch(e){return {};}})();
+
+let _saving=false;
+function syncUI(s){
+  const dot=document.getElementById("sync-dot"),txt=document.getElementById("sync-txt");
+  if(!dot)return;
+  dot.className=s==="ok"?"":s==="syncing"?"syncing":"error";
+  txt.textContent=s==="ok"?"저장됨":s==="syncing"?"저장 중...":"오류";
+}
+async function save(desc,diff){
+  _saving=true;syncUI("syncing");
+  try{
+    localStorage.setItem(LS_KEY,JSON.stringify(S));
+    if(desc){
+      const h=window._histData||{};
+      h["h"+Date.now()]={who:window._currentUser||"?",what:desc,when:new Date().toISOString(),diff:diff||null};
+      const keys=Object.keys(h).sort();if(keys.length>200)keys.slice(0,-200).forEach(k=>delete h[k]);
+      localStorage.setItem(LS_HIST,JSON.stringify(h));
+      window._histData=h;
+    }
+    syncUI("ok");
+  }catch(e){syncUI("error");}
+  _saving=false;
+}
+
+// Firebase sync in background (optional - UI works without it)
+function _initFirebase(){
+  try{
+    if(typeof firebase==="undefined")return;
+    firebase.initializeApp({apiKey:"AIzaSyBqbvek3T8PbKakOd-9dsrwyK1kQ6ifXaU",authDomain:"twhk-dashboard-4e2ae.firebaseapp.com",databaseURL:"https://twhk-dashboard-4e2ae-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"twhk-dashboard-4e2ae",storageBucket:"twhk-dashboard-4e2ae.firebasestorage.app",messagingSenderId:"454545580861",appId:"1:454545580861:web:06507d9ea95e2afa4cdb54"});
+    const db=firebase.database();
+    db.ref("v5").on("value",snap=>{
+      if(_saving)return;
+      const d=snap.val();
+      if(d){
+        // merge: Firebase wins, but save to localStorage too
+        S=d;localStorage.setItem(LS_KEY,JSON.stringify(S));
+        syncUI("ok");renderHeader();rerenderCurrent();
+      } else {
+        // push local data to Firebase
+        db.ref("v5").set(S);
+      }
+    });
+    // Override save to also write to Firebase
+    const _localSave=save;
+    window._fbdb=db;
+  }catch(e){console.log("Firebase optional - using localStorage only");}
+}
+// Try Firebase after page renders
+// Firebase disabled
+
+function autoSnapshotIfNeeded(){
+  try{
+    const today=new Date().toISOString().slice(0,10);
+    if(localStorage.getItem("lastSnap")===today)return;
+    if(new Date().getDay()===1||!localStorage.getItem("lastSnap")){
+      const snaps=JSON.parse(localStorage.getItem(LS_SNAP)||"{}");
+      snaps[today]={data:JSON.parse(JSON.stringify(S)),at:new Date().toISOString(),label:"자동 백업"};
+      const keys=Object.keys(snaps).sort();if(keys.length>30)keys.slice(0,-30).forEach(k=>delete snaps[k]);
+      localStorage.setItem(LS_SNAP,JSON.stringify(snaps));
+      localStorage.setItem("lastSnap",today);
+    }
+  }catch(e){}
+}
+async function takeSnapshot(label){
+  try{
+    const key=new Date().toISOString().slice(0,16).replace("T","_").replace(":","");
+    const snaps=JSON.parse(localStorage.getItem(LS_SNAP)||"{}");
+    snaps[key]={data:JSON.parse(JSON.stringify(S)),at:new Date().toISOString(),label:label||"수동 백업",by:window._currentUser||"?"};
+    localStorage.setItem(LS_SNAP,JSON.stringify(snaps));
+    return key;
+  }catch(e){return null;}
+}
+window._snapData=(function(){try{return JSON.parse(localStorage.getItem(LS_SNAP)||"{}");}catch(e){return {};}})();
 const ADMIN_PW="yeseul2025";
 const PRODS_DEF=["율무팩","제로팩","MTS","보라당근앰플"];
 
@@ -323,8 +401,7 @@ function makeDefault(){
 }
 
 let S=makeDefault();
-let _saving=false;
-window._histData={};
+// _saving and _histData declared in storage init above
 
 function syncUI(s){const dot=document.getElementById("sync-dot"),txt=document.getElementById("sync-txt");if(!dot)return;dot.className=s==="ok"?"":s==="syncing"?"syncing":"error";txt.textContent=s==="ok"?"실시간 동기화":s==="syncing"?"저장 중...":"연결 오류";}
 async function save(desc,diff){
@@ -336,11 +413,11 @@ async function save(desc,diff){
   _saving=false;
 }
 
-onValue(HIST_ROOT,(snap)=>{window._histData=snap.val()||{};if(document.getElementById("hist-overlay").classList.contains("open"))window._renderHistory();});
+// hist listener in localStorage mode
 
 // ── SNAPSHOT SYSTEM ──────────────────────────────────────
 let _snapData={};
-onValue(SNAP_ROOT,(snap)=>{_snapData=snap.val()||{};});
+
 
 async function takeSnapshot(label){
   try{
@@ -441,14 +518,26 @@ window._renderHistory=function(){
 };
 window.toggleDiff=function(k){const el=document.getElementById("diff-"+k);if(el)el.classList.toggle("open");};
 
-onValue(ROOT,(snap)=>{
-  if(_saving)return;
-  const d=snap.val();
-  if(d){S=d;syncUI("ok");}
-  else if(window._currentUser){save();}
-  if(window._currentUser){renderHeader();rerenderCurrent();}
-},(e)=>syncUI("error"));
+// Firebase realtime handled in _initFirebase
 function rerenderCurrent(){const a=document.querySelector(".tab-btn.active");if(a)renderTab(a.dataset.tab);}
+
+// ── GLOBAL REGION FILTER ──
+window.setGlobalRegion=function(r){
+  window._globalRegion=r;
+  renderHeader();
+  rerenderCurrent();
+};
+
+// ── HIDDEN PRODUCTS ──
+function hiddenProds(){return arr(S.hiddenProducts||[]);}
+function visibleProds(){return prods().filter(p=>!hiddenProds().includes(p));}
+function visibleProdsTW(){return prodsTW().filter(p=>!hiddenProds().includes(p));}
+function visibleProdsHK(){return prodsHK().filter(p=>!hiddenProds().includes(p));}
+function visibleProdsForRegion(r){return r==="tw"?visibleProdsTW():visibleProdsHK();}
+
+// ── VIEWER CHECK ──
+function canEdit(){return !window._isViewer;}
+function editGuard(){if(!canEdit()){alert("뷰어는 수정할 수 없습니다.");return false;}return true;}
 
 function doShowApp(){
   document.getElementById("login-screen").style.display="none";
@@ -462,11 +551,15 @@ function doShowApp(){
 // Now that all functions are ready, expose processLogin
 window._processLogin=function(pw){
   if(pw==="yeseul2025"){
-    window._currentUser=null;window._isAdmin=false;doShowApp();return;
+    window._currentUser="예슬(관리자)";window._isAdmin=true;window._isViewer=false;window._globalRegion="ALL";doShowApp();return;
   }
   const users=arr(S.settings?.users||[]);
   const user=users.find(u=>u.pw===pw);
-  if(user){window._currentUser=user.name;window._isAdmin=!!user.isAdmin;doShowApp();}
+  if(user){
+    window._currentUser=user.name;
+    window._isAdmin=!!user.isAdmin;
+    window._isViewer=user.role==="viewer";
+    doShowApp();}
   else{document.getElementById("login-error").style.display="block";document.getElementById("pw-input").value="";document.getElementById("pw-input").focus();}
 };
 // Process any pw entered before this ran
@@ -595,7 +688,14 @@ function renderCell(f,val){
     case"month_picker":return`<span class="text-muted">${esc(val)}</span>`;
     case"week_picker":return`<span class="text-muted">${weekLabel(val)}</span>`;
     case"number":return val?String(Number(val).toLocaleString()):``;
-    case"memo":return `<span style="max-width:160px;display:inline-block;font-size:12px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(val)}</span>`;
+    case"memo":
+    case"text":{
+      const str=String(val);
+      const id="cell_"+Math.random().toString(36).slice(2,8);
+      const isLong=str.length>30;
+      if(!isLong)return`<span style="font-size:12px;color:#1e2535">${esc(str)}</span>`;
+      return`<span id="${id}" class="expandable-cell" onclick="toggleCell('${id}')" style="max-width:160px;display:inline-block;font-size:12px;color:#1e2535;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;border-bottom:1px dashed #c7d2fe" title="클릭하면 펼쳐집니다">${esc(str)}</span>`;
+    }
     default:return `<span style="font-size:13px">${esc(val)}</span>`;
   }
 }
@@ -604,14 +704,40 @@ function renderCell(f,val){
 function renderHeader(){
   const t=new Date(),days=["일","월","화","수","목","금","토"];
   const el=document.getElementById("header-date");if(el)el.textContent=`${t.getFullYear()}. ${t.getMonth()+1}. ${t.getDate()}. (${days[t.getDay()]})`;
-  const ub=document.getElementById("user-badge");if(ub)ub.textContent=window._currentUser||"";
-  const totalDays=new Date(t.getFullYear(),t.getMonth()+1,0).getDate();
+  const ub=document.getElementById("user-badge");
+  if(ub){
+    const roleTxt=window._isAdmin?"관리자":window._isViewer?" 👁 뷰어":"";
+    ub.textContent=(window._currentUser||"")+roleTxt;
+    ub.style.background=window._isViewer?"#fef3c7":"";
+    ub.style.borderColor=window._isViewer?"#fde68a":"";
+    ub.style.color=window._isViewer?"#d97706":"";
+  }
+  const grf=document.getElementById("global-region-filter");
+  if(grf)grf.innerHTML=["ALL","TW","HK"].map(r=>`<button class="grp-pill${(window._globalRegion||"ALL")===r?" active":""}" onclick="setGlobalRegion('${r}')">${r==="ALL"?"전체":r==="TW"?"🇹🇼 TW":"🇭🇰 HK"}</button>`).join("");
+  // global region filter
+    const totalDays=new Date(t.getFullYear(),t.getMonth()+1,0).getDate();
   const ov=S.salesOverall||{tw:{},hk:{}};
   function calcProj(d){const ud=calcUpdateDay(d.updatedAt);return{rProj:projRevenue(d.actualRevenue||0,ud,totalDays),cProj:projRevenue(d.actualCM||0,ud,totalDays),rt:d.targetRevenue||0,ct:d.targetCM||0};}
   const tw=calcProj(ov.tw||{});const hk=calcProj(ov.hk||{});
   const twRP=pct(tw.rProj,tw.rt),twCP=pct(tw.cProj,tw.ct),hkRP=pct(hk.rProj,hk.rt),hkCP=pct(hk.cProj,hk.ct);
   const ke=document.getElementById("header-kpis");
-  if(ke)ke.innerHTML=[{l:"TW 예상달성",v:`매출 ${twRP}%`,sub:`CM ${twCP}%`,c:cpct(twRP),r:"tw"},{l:"HK 예상달성",v:`매출 ${hkRP}%`,sub:`CM ${hkCP}%`,c:cpct(hkRP),r:"hk"}].map(b=>`<div class="kpi-badge" onclick="openEditOverall('${b.r}')"><div class="kpi-label">${b.l}</div><div class="kpi-val" style="color:${b.c}">${b.v}</div><div class="kpi-sub">${b.sub}</div></div>`).join("");
+  if(ke)ke.innerHTML=[
+    {l:"TW 예상달성",rp:twRP,cp:twCP,r:"tw"},
+    {l:"HK 예상달성",rp:hkRP,cp:hkCP,r:"hk"}
+  ].map(b=>`<div class="kpi-badge" onclick="openEditOverall('${b.r}')">
+    <div class="kpi-label">${b.l}</div>
+    <div style="display:flex;gap:10px;justify-content:center;align-items:baseline;margin-top:2px">
+      <div style="text-align:center">
+        <div style="font-size:9px;color:#b0bdd4">매출</div>
+        <div style="font-size:13px;font-weight:800;color:${cpct(b.rp)}">${b.rp}%</div>
+      </div>
+      <div style="width:1px;height:20px;background:#e2e9f5"></div>
+      <div style="text-align:center">
+        <div style="font-size:9px;color:#b0bdd4">CM</div>
+        <div style="font-size:13px;font-weight:800;color:${cpct(b.cp)}">${b.cp}%</div>
+      </div>
+    </div>
+  </div>`).join("");
 }
 
 // ═══════════ TAB 1: 성과 ═══════════
@@ -620,7 +746,8 @@ function renderSales(){
   const p=document.getElementById("panel-sales");
   const today=new Date();
   const totalDays=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
-  const showRegions=salesFilter==="ALL"?["tw","hk"]:salesFilter==="TW"?["tw"]:["hk"];
+  const gr=window._globalRegion||"ALL";
+  const showRegions=gr==="TW"?["tw"]:gr==="HK"?["hk"]:["tw","hk"];
   const ov=S.salesOverall||{tw:{},hk:{}};
   let summaryCards=`<div class="grid-2 mb-20">`;
   showRegions.forEach(r=>{
@@ -646,7 +773,7 @@ function renderSales(){
   summaryCards+=`</div>`;
   let tableRows="";
   showRegions.forEach(r=>{
-    const regionProds=prodsForRegion(r);
+    const regionProds=visibleProdsForRegion(r);
     regionProds.forEach(prod=>{
       const d=(S.sales?.[prod]||{})[r]||{};
       const ud=calcUpdateDay(d.updatedAt);
@@ -662,7 +789,7 @@ function renderSales(){
         <td>${(d.targetCM||0).toLocaleString()}</td>
         <td style="font-weight:700">${(d.actualCM||0).toLocaleString()}</td>
         <td><b style="color:${cpct(cpp)}">${cpp}%</b></td>
-        <td><button class="btn btn-ghost btn-sm" onclick="editSalesRow('${esc(prod)}','${r}')">수정</button></td>
+        <td>${canEdit()?`<button class="btn btn-ghost btn-sm" onclick="editSalesRow('${esc(prod)}','${r}')">수정</button>`:""}</td>
       </tr>`;
     });
   });
@@ -726,7 +853,13 @@ function renderStrategy(){
     <button class="filter-pill${strFilter==="HK"?" active":""}" onclick="setStrFilter('HK')">🇭🇰 홍콩</button>
   </div>`;
   html+=renderStrCard("__common__","[공통] 전체 전략",S.commonStrategy||{});
-  prods().forEach(prod=>{html+=renderStrCard(prod,prod,S.strategy?.[prod]||{});});
+  visibleProds().forEach(prod=>{
+    const gr=window._globalRegion||"ALL";
+    // if globalRegion set, only show products in that region
+    if(gr==="TW"&&!visibleProdsTW().includes(prod))return;
+    if(gr==="HK"&&!visibleProdsHK().includes(prod))return;
+    html+=renderStrCard(prod,prod,S.strategy?.[prod]||{});
+  });
   p.innerHTML=html;
 }
 function strategyMatchMonth(st,month){if(month==="all")return true;if(!st.startMonth&&!st.endMonth)return true;const s=st.startMonth||"0000-00",e=st.endMonth||"9999-99";return month>=s&&month<=e;}
@@ -757,8 +890,8 @@ function renderStrCard(prod,label,allMonthData){
       <div class="row gap-8 mb-6" style="justify-content:space-between">
         <div>📌 <b>${period}</b>${rl}</div>
         <div style="display:flex;gap:6px">
-          <button class="btn btn-ghost btn-sm" onclick="editStrategy('${esc(prod)}','${mk}')">✏️ 수정</button>
-          <button class="btn btn-ghost btn-sm" style="color:#ef4444" onclick="deleteStrategy('${esc(prod)}','${mk}')">삭제</button>
+          ${canEdit()?`<button class="btn btn-ghost btn-sm" onclick="editStrategy('${esc(prod)}','${mk}')">✏️ 수정</button>`:""}
+          ${canEdit()?`<button class="btn btn-ghost btn-sm" style="color:#ef4444" onclick="deleteStrategy('${esc(prod)}','${mk}')">삭제</button>`:""}
         </div>
       </div>
       ${esc(st.summary)}
@@ -771,8 +904,8 @@ function renderStrCard(prod,label,allMonthData){
     <div class="row gap-10 mb-10" style="justify-content:space-between;flex-wrap:wrap">
       <div class="row gap-8"><span style="font-size:15px;font-weight:900">${esc(label)}</span><span class="text-muted">${done}/${total} 완료</span>${total?`<div class="bar-wrap" style="width:60px;height:5px"><div class="bar-fill" style="width:${pp}%;background:${cpct(pp)}"></div></div>`:""}</div>
       <div style="display:flex;gap:7px">
-        <button class="btn btn-ghost btn-sm" onclick="addStrategy('${esc(prod)}')">+ 전략</button>
-        <button class="btn btn-primary btn-sm" onclick="addAction('${esc(prod)}')">+ 액션</button>
+        ${canEdit()?`<button class="btn btn-ghost btn-sm" onclick="addStrategy('${esc(prod)}')">+ 전략</button>`:""}
+        ${canEdit()?`<button class="btn btn-primary btn-sm" onclick="addAction('${esc(prod)}')">+ 액션</button>`:""}
       </div>
     </div>
     ${stratSums}
@@ -782,6 +915,7 @@ function renderStrCard(prod,label,allMonthData){
 window.setStrFilter=function(f){strFilter=f;renderStrategy();};
 window.setStrMonth=function(m){strMonth=m;renderStrategy();};
 window.addStrategy=function(prod){
+  if(!editGuard())return;
   const isCommon=prod==="__common__";
   modal(`${isCommon?"[공통]":esc(prod)} 전략 추가`,`<label>기간 시작</label><select id="str-sm">${monthOpts(curMonth(),false)}</select><label>기간 종료</label><select id="str-em">${monthOpts(curMonth(),false)}</select><label>지역</label><select id="str-reg"><option value="전체">전체</option>${["TW","HK"].map(r=>`<option>${r}</option>`).join("")}</select><label>전략 내용</label><textarea id="str-su" rows="5"></textarea>`,()=>{
     const sm=gv("str-sm"),em=gv("str-em"),reg=gv("str-reg"),su=gv("str-su");if(!su)return;
@@ -818,6 +952,7 @@ window.deleteStrategy=function(prod,key){
   save(`전략삭제: ${prod}`);renderStrategy();
 };
 window.addAction=function(prod){
+  if(!editGuard())return;
   const isCommon=prod==="__common__";const key=strMonth==="all"?curMonth():strMonth;
   const schema=getSchema("strategy_action");
   modal("액션 추가",buildFormHtml(schema,null),()=>{
@@ -858,10 +993,14 @@ function renderGenericTab(tabKey,title,filterConfig,boardFn){
   const allRecs=getRecords(tabKey);
   // filter
   const filtered=allRecs.filter(r=>{
+    const gr=window._globalRegion||"ALL";
+    if(gr!=="ALL"&&r.f_region&&r.f_region!==gr)return false;
     if(f.reg&&f.reg!=="ALL"&&r.f_region!==f.reg)return false;
     if(f.month&&f.month!=="all"&&r.f_month&&r.f_month!==f.month)return false;
     if(f.prod&&f.prod!=="ALL"&&r.f_product!==f.prod)return false;
     if(f.week&&f.week!=="all"&&r.f_week!==f.week)return false;
+    // hidden products filter
+    if(r.f_product&&hiddenProds().includes(r.f_product))return false;
     return true;
   });
 
@@ -886,13 +1025,14 @@ function renderGenericTab(tabKey,title,filterConfig,boardFn){
 
   // table
   const adminEdit=window._isAdmin?`<button class="btn btn-ghost btn-sm" onclick="openSchemaEditor('${tabKey}')"><span class="admin-badge">관리자</span> 필드 관리</button>`:"";
+  const addBtn=canEdit()?`<button class="btn btn-primary" onclick="addRecord('${tabKey}')">+ 추가</button>`:"";
   const thHtml=schema.map(f=>`<th>${esc(f.label)}</th>`).join("")+"<th></th>";
-  let rows=filtered.map(rec=>`<tr>${schema.map(f=>`<td>${renderCell(f,rec[f.id])}</td>`).join("")}<td><button class="btn btn-ghost btn-sm" onclick="editRecord('${tabKey}',${rec.id})">수정</button></td></tr>`).join("");
+  let rows=filtered.map(rec=>`<tr>${schema.map(f=>`<td>${renderCell(f,rec[f.id])}</td>`).join("")}<td>${canEdit()?`<button class="btn btn-ghost btn-sm" onclick="editRecord('${tabKey}',${rec.id})">수정</button>`:""}</td></tr>`).join("");
 
   p.innerHTML=`
   <div class="toolbar">
     <div class="toolbar-left"><span class="sec-title">${title}</span></div>
-    <div class="toolbar-right">${adminEdit}<button class="btn btn-primary" onclick="addRecord('${tabKey}')">+ 추가</button></div>
+    <div class="toolbar-right">${adminEdit}${addBtn}</div>
   </div>
   ${filterHtml}
   ${boardHtml}
@@ -902,6 +1042,7 @@ function renderGenericTab(tabKey,title,filterConfig,boardFn){
 window.setTabFilter=function(tabKey,filterKey,val){if(!tabFilters[tabKey])tabFilters[tabKey]={};tabFilters[tabKey][filterKey]=val;renderTab(tabKey);};
 
 window.addRecord=function(tabKey){
+  if(!editGuard())return;
   const schema=getSchema(tabKey);
   modal("추가",buildFormHtml(schema,null),()=>{
     const rec=readFormValues(schema,{id:Date.now()});
@@ -910,6 +1051,7 @@ window.addRecord=function(tabKey){
   });
 };
 window.editRecord=function(tabKey,id){
+  if(!editGuard())return;
   const recs=getRecords(tabKey);const rec=recs.find(x=>x.id===id);if(!rec)return;
   const schema=getSchema(tabKey);
   modal("수정",buildFormHtml(schema,rec),()=>{
@@ -1052,7 +1194,11 @@ function renderSettings(){
   if(!window._isAdmin){p.innerHTML=`<div class="card" style="text-align:center;padding:40px"><div style="font-size:40px;margin-bottom:12px">🔒</div><div style="font-size:16px;font-weight:700">관리자 전용</div></div>`;return;}
   const users=arr(S.settings?.users||[]);
   const iMems=infMembers();const cMems=ctMembers();const mems=allMembers();
-  let uRows=users.map((u,i)=>`<tr><td style="font-weight:700">${esc(u.name)}</td><td>${u.isAdmin?`<span class="tag s-dev">관리자</span>`:`<span class="tag s-todo">팀원</span>`}</td><td style="font-family:monospace;color:#64748b;font-size:12px">${esc(u.pw)}</td><td><button class="btn btn-ghost btn-sm" onclick="editUser(${i})">수정</button>${!u.isAdmin?`<button class="btn btn-ghost btn-sm" style="color:#ef4444;margin-left:4px" onclick="delUser(${i})">삭제</button>`:""}</td></tr>`).join("");
+  let uRows=users.map((u,i)=>{
+    const role=u.role||(u.isAdmin?"admin":"member");
+    const roleBadge=role==="admin"?`<span class="tag s-dev">관리자</span>`:role==="viewer"?`<span class="tag s-todo">뷰어</span>`:`<span class="tag s-ing">팀원</span>`;
+    return `<tr><td style="font-weight:700">${esc(u.name)}</td><td>${roleBadge}</td><td style="font-family:monospace;color:#64748b;font-size:12px">${esc(u.pw)}</td><td><button class="btn btn-ghost btn-sm" onclick="editUser(${i})">수정</button>${!u.isAdmin?`<button class="btn btn-ghost btn-sm" style="color:#ef4444;margin-left:4px" onclick="delUser(${i})">삭제</button>`:""}</td></tr>`;
+  }).join("");
   const renderMemberList=(list,delFn)=>list.map((m,i)=>`<div class="row gap-8 mb-8"><span class="chip">${esc(m)}</span><button class="btn btn-ghost btn-sm" onclick="${delFn}(${i})" style="color:#ef4444">삭제</button></div>`).join("")||`<div class="text-muted">없음</div>`;
   p.innerHTML=`
   <div class="toolbar"><div class="toolbar-left"><span class="sec-title">⚙️ 설정 (관리자 전용)</span></div></div>
@@ -1076,14 +1222,25 @@ function renderSettings(){
     </div>
   </div>
   <div class="card">
+  <div class="card mb-16">
+    <div class="row mb-10" style="justify-content:space-between">
+      <span style="font-size:13px;font-weight:700">🙈 제품 숨기기</span>
+      <span class="admin-badge">관리자 전용</span>
+    </div>
+    <div class="text-muted mb-10">숨긴 제품은 모든 탭에서 표시되지 않습니다. 데이터는 삭제되지 않아요.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+      ${visibleProds().map(p=>`<button class="btn btn-ghost btn-sm" onclick="hideProduct('${esc(p)}')" style="color:#ef4444">👁 ${esc(p)} 숨기기</button>`).join("")||`<span class="text-muted">숨길 제품이 없습니다</span>`}
+    </div>
+    ${hiddenProds().length?`<div style="margin-top:8px"><div class="text-xs text-muted mb-6">숨겨진 제품</div><div style="display:flex;flex-wrap:wrap;gap:8px">${hiddenProds().map(p=>`<button class="btn btn-ghost btn-sm" onclick="showProduct('${esc(p)}')" style="color:#22c55e">✅ ${esc(p)} 복원</button>`).join("")}</div></div>`:""}
+  </div>
     <div class="row mb-12"><span style="font-size:13px;font-weight:700">🗂️ 탭별 필드 관리</span><span class="admin-badge" style="margin-left:8px">관리자 전용</span></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       ${["influencer","content","promo","onsite","reference","strategy_action"].map(k=>`<button class="btn btn-ghost" onclick="openSchemaEditor('${k}')">📋 ${k}</button>`).join("")}
     </div>
   </div>`;
 }
-window.addUser=function(){modal("담당자 추가",`<label>이름</label><input id="u-n"><label>비밀번호</label><input id="u-p" type="password"><label>역할</label><select id="u-r"><option value="false">팀원</option><option value="true">관리자</option></select>`,()=>{if(!S.settings)S.settings={users:[]};if(!S.settings.users)S.settings.users=[];S.settings.users=arr(S.settings.users);S.settings.users.push({name:gv("u-n"),pw:gv("u-p"),isAdmin:document.getElementById("u-r").value==="true"});save("담당자추가");renderSettings();closeModal();});};
-window.editUser=function(i){const u=arr(S.settings?.users||[])[i];modal("담당자 수정",`<label>이름</label><input id="u-n" value="${esc(u.name)}"><label>비밀번호(변경시만)</label><input id="u-p" type="password"><label>역할</label><select id="u-r"><option value="false"${!u.isAdmin?" selected":""}>팀원</option><option value="true"${u.isAdmin?" selected":""}>관리자</option></select>`,()=>{u.name=gv("u-n");if(gv("u-p"))u.pw=gv("u-p");u.isAdmin=document.getElementById("u-r").value==="true";save("담당자수정");renderSettings();closeModal();});};
+window.addUser=function(){modal("담당자 추가",`<label>이름</label><input id="u-n"><label>비밀번호</label><input id="u-p" type="password"><label>역할</label><select id="u-r"><option value="member">팀원</option><option value="admin">관리자</option><option value="viewer">뷰어 (조회만)</option></select>`,()=>{if(!S.settings)S.settings={users:[]};if(!S.settings.users)S.settings.users=[];S.settings.users=arr(S.settings.users);const role=document.getElementById("u-r").value;S.settings.users.push({name:gv("u-n"),pw:gv("u-p"),isAdmin:role==="admin",role:role});save("담당자추가");renderSettings();closeModal();});};
+window.editUser=function(i){const u=arr(S.settings?.users||[])[i];const curRole=u.role||(u.isAdmin?"admin":"member");modal("담당자 수정",`<label>이름</label><input id="u-n" value="${esc(u.name)}"><label>비밀번호(변경시만)</label><input id="u-p" type="password"><label>역할</label><select id="u-r"><option value="member"${curRole==="member"?" selected":""}>팀원</option><option value="admin"${curRole==="admin"?" selected":""}>관리자</option><option value="viewer"${curRole==="viewer"?" selected":""}>뷰어 (조회만)</option></select>`,()=>{const role=document.getElementById("u-r").value;u.name=gv("u-n");if(gv("u-p"))u.pw=gv("u-p");u.isAdmin=role==="admin";u.role=role;save("담당자수정");renderSettings();closeModal();});};
 window.delUser=function(i){S.settings.users=arr(S.settings.users||[]).filter((_,j)=>j!==i);save("담당자삭제");renderSettings();};
 window.addInfMember=function(){modal("인플루언서 담당자 추가",`<label>이름</label><input id="im-n">`,()=>{if(!S.infMembers)S.infMembers=[];S.infMembers=arr(S.infMembers);S.infMembers.push(gv("im-n"));save("인플담당자추가");renderSettings();closeModal();});};
 window.delInfMember=function(i){S.infMembers=arr(S.infMembers).filter((_,j)=>j!==i);save("인플담당자삭제");renderSettings();};
@@ -1102,8 +1259,140 @@ window.editProdsRegion=function(r){
   });
 };
 
+// ── HIDDEN PRODUCTS ACTIONS ──
+window.hideProduct=function(prod){
+  if(!S.hiddenProducts)S.hiddenProducts=[];
+  S.hiddenProducts=arr(S.hiddenProducts);
+  if(!S.hiddenProducts.includes(prod))S.hiddenProducts.push(prod);
+  save(`제품 숨김: ${prod}`);renderSettings();rerenderCurrent();
+};
+window.showProduct=function(prod){
+  S.hiddenProducts=arr(S.hiddenProducts).filter(p=>p!==prod);
+  save(`제품 복원: ${prod}`);renderSettings();rerenderCurrent();
+};
+
+// ── CELL EXPAND/COLLAPSE ──
+window.toggleCell=function(id){
+  const el=document.getElementById(id);if(!el)return;
+  const expanded=el.dataset.expanded==="1";
+  if(expanded){
+    el.style.whiteSpace="nowrap";el.style.overflow="hidden";el.style.maxWidth="160px";el.style.textOverflow="ellipsis";el.dataset.expanded="0";
+  }else{
+    el.style.whiteSpace="normal";el.style.overflow="visible";el.style.maxWidth="360px";el.style.textOverflow="unset";el.dataset.expanded="1";
+  }
+};
+
 // ── GLOBAL BINDINGS ──
-function renderTab(tab){({sales:renderSales,strategy:renderStrategy,influencer:renderInfluencer,content:renderContent,promo:renderPromo,onsite:renderOnsite,reference:renderReference,settings:renderSettings})[tab]?.();}
+function renderGuide(){
+  const p=document.getElementById("panel-guide");
+  p.innerHTML=`
+  <div style="max-width:860px;margin:0 auto">
+    <div class="card mb-16" style="background:linear-gradient(135deg,#eef2ff,#f5f3ff);border-color:#c4b5fd">
+      <div style="font-size:18px;font-weight:900;color:#1e2535;margin-bottom:6px">👋 대만·홍콩 대시보드 사용 가이드</div>
+      <div style="font-size:13px;color:#64748b;line-height:1.8">이 대시보드는 <b>TW·HK 리전의 마케팅 성과와 업무 전반을 한 곳에서 관리</b>하기 위한 운영 시트입니다.<br>
+      파트장과 팀원이 데이터를 직접 입력하고, 본사는 이 시트 하나로 현황을 실시간으로 파악합니다.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+
+      <div class="card">
+        <div style="font-size:14px;font-weight:800;margin-bottom:10px">📊 성과 탭</div>
+        <div style="font-size:12px;color:#64748b;line-height:1.9">
+          <b>목적:</b> 전체 및 제품별 매출·CM 실적 추적<br>
+          <b>입력 주기:</b> 매일 (최신 수치 반영)<br>
+          <b>입력 방법:</b> 상단 카드 클릭 → 전체 수치 입력 / 제품별 행 수정 버튼<br>
+          <b>💡 포인트:</b> 저장 시각 기준으로 예상달성률이 자동 계산됩니다. 수치 입력 후 저장하면 헤더의 예상달성률이 즉시 업데이트됩니다.
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:14px;font-weight:800;margin-bottom:10px">🎯 전략 탭</div>
+        <div style="font-size:12px;color:#64748b;line-height:1.9">
+          <b>목적:</b> 월별 전략 방향 설정 및 액션 진행 현황 관리<br>
+          <b>입력 주기:</b> 월초 전략 등록 / 매주 액션 현황 업데이트<br>
+          <b>입력 방법:</b> + 전략 버튼 → 기간·지역·내용 입력 / + 액션 버튼 → 세부 실행 항목 등록<br>
+          <b>💡 포인트:</b> TW/HK 필터로 국가별 전략을 분리해서 볼 수 있습니다. 액션의 마감일이 걸쳐있는 달에는 자동으로 해당 월 뷰에 표시됩니다.
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:14px;font-weight:800;margin-bottom:10px">🤝 인플루언서 탭</div>
+        <div style="font-size:12px;color:#64748b;line-height:1.9">
+          <b>목적:</b> 인플루언서 섭외부터 업로드·성과까지 파이프라인 관리<br>
+          <b>입력 주기:</b> 진행 현황 변경될 때마다 즉시 업데이트<br>
+          <b>입력 방법:</b> + 추가 → 계정명, 진행 현황, 비용, 콘티 링크 등 입력<br>
+          <b>💡 포인트:</b> 킬러콘텐츠 체크 시 상단 보드에 자동 집계됩니다. 업로드 완료 후 반드시 성과 링크를 기재해주세요.
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:14px;font-weight:800;margin-bottom:10px">🎬 콘텐츠 탭</div>
+        <div style="font-size:12px;color:#64748b;line-height:1.9">
+          <b>목적:</b> 광고 소재 제작 현황 및 성과 트래킹<br>
+          <b>입력 주기:</b> 소재 기획 시 등록 → 제작 단계별 현황 업데이트<br>
+          <b>입력 방법:</b> + 추가 → 제작 주차(월/주차 선택), 소구점, 기획안 링크 등 입력<br>
+          <b>💡 포인트:</b> 담당자별 보드에서 제작 수량과 킬러콘텐츠 개수가 자동 집계됩니다. 업로드 완료 후 성과 링크 필수 기재.
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:14px;font-weight:800;margin-bottom:10px">🎁 프로모션 탭</div>
+        <div style="font-size:12px;color:#64748b;line-height:1.9">
+          <b>목적:</b> 프로모션 기획·진행·회고 통합 관리<br>
+          <b>입력 주기:</b> 기획 시 등록 → 종료 후 실적·회고 입력<br>
+          <b>입력 방법:</b> + 추가 → 기간, 내용 요약, 목표 매출 입력. 종료 후 실적과 잘한 것/아쉬운 것 기재<br>
+          <b>💡 포인트:</b> 회고 항목(잘한 것·아쉬운 것)은 반드시 채워주세요. 다음 프로모션 기획의 근거가 됩니다.
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:14px;font-weight:800;margin-bottom:10px">🛒 온사이트 탭</div>
+        <div style="font-size:12px;color:#64748b;line-height:1.9">
+          <b>목적:</b> 쇼핑몰 내 페이지 개선·테스트 작업 트래킹<br>
+          <b>입력 주기:</b> 작업 시작 시 등록 → 상태 변경 시 업데이트<br>
+          <b>입력 방법:</b> + 추가 → 액션명, 내용, 기간, 진행 현황, 목표·결과 입력<br>
+          <b>💡 포인트:</b> 진행 현황을 '테스트중 → 테스트 완료 → 유지/원복'으로 관리해서 어떤 개선이 효과가 있었는지 추적합니다.
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:14px;font-weight:800;margin-bottom:10px">🔍 레퍼런스 탭</div>
+        <div style="font-size:12px;color:#64748b;line-height:1.9">
+          <b>목적:</b> 경쟁사·레퍼런스 브랜드 분석 및 벤치마킹 적용 관리<br>
+          <b>입력 주기:</b> 분석 진행 시 등록 → 완료 후 결과 및 적용 내용 기재<br>
+          <b>입력 방법:</b> + 추가 → 브랜드명, 경쟁사 제품, 벤치마킹 포인트, 보고서 링크 입력<br>
+          <b>💡 포인트:</b> 분석에서 그치지 않고 '벤치마킹 적용중/완료' 상태까지 추적해서 실제 실행으로 이어지게 합니다.
+        </div>
+      </div>
+
+      <div class="card" style="background:#fffbeb;border-color:#fde68a">
+        <div style="font-size:14px;font-weight:800;margin-bottom:10px">⚙️ 설정 탭 <span style="font-size:11px;color:#d97706;font-weight:600">(관리자 전용)</span></div>
+        <div style="font-size:12px;color:#64748b;line-height:1.9">
+          <b>담당자 계정:</b> 로그인 비밀번호 및 관리자 권한 설정<br>
+          <b>담당자 목록:</b> 인플루언서·콘텐츠 탭에 표시될 담당자 이름 관리<br>
+          <b>국가별 제품:</b> TW·HK 각 국가에서 취급하는 제품 목록 별도 관리<br>
+          <b>필드 관리:</b> 각 탭의 입력 항목을 추가·수정·삭제·순서변경<br>
+          <b>💾 백업:</b> 매일 자동 백업. 수동 백업 및 특정 시점 복구 가능
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card" style="background:#f0fdf4;border-color:#bbf7d0">
+      <div style="font-size:13px;font-weight:800;color:#16a34a;margin-bottom:10px">✅ 올바른 사용법 요약</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;color:#64748b;line-height:1.8">
+        <div>1️⃣ 성과 탭 수치는 매일 업데이트 (예상달성률 자동 계산)</div>
+        <div>2️⃣ 전략·액션은 월초 등록 후 매주 현황 업데이트</div>
+        <div>3️⃣ 인플루언서·콘텐츠는 시작 시 바로 등록, 단계별 상태 변경</div>
+        <div>4️⃣ 링크(콘티, 기획안, 성과)는 반드시 기재 — 본사 확인용</div>
+        <div>5️⃣ 프로모션·온사이트 종료 후 결과·회고 필수 입력</div>
+        <div>6️⃣ 킬러콘텐츠는 체크 표시 — 별도 집계 및 레퍼런스로 활용</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderTab(tab){({guide:renderGuide,sales:renderSales,strategy:renderStrategy,influencer:renderInfluencer,content:renderContent,promo:renderPromo,onsite:renderOnsite,reference:renderReference,settings:renderSettings})[tab]?.();}
 document.querySelectorAll(".tab-btn").forEach(btn=>{
   btn.addEventListener("click",()=>{
     document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
@@ -1148,13 +1437,13 @@ document.getElementById("pw-input").addEventListener("keydown",function(e){
   if(e.key==="Enter") doLogin(this.value);
 });
 
+// Auto-init (login disabled) - render after Firebase loads
+// onValue will call renderHeader/rerenderCurrent when data arrives
+// but also render immediately with default data as fallback
+setTimeout(function(){renderHeader();renderSales();}, 100);
+
 window.logout=function(){
-  window._currentUser=null;window._isAdmin=false;
-  document.getElementById("login-screen").style.display="flex";
-  document.getElementById("app").style.display="none";
-  document.getElementById("sync-bar").style.display="none";
-  document.getElementById("pw-input").value="";
-  document.getElementById("login-error").style.display="none";
+  // no-op when login is disabled
 };
 window.openHistory=function(){document.getElementById("hist-overlay").classList.add("open");window._renderHistory();};
 window.closeHistory=function(){document.getElementById("hist-overlay").classList.remove("open");};
