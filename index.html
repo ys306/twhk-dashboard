@@ -52,7 +52,7 @@ body{min-height:100vh;background:#f0f4ff;color:#1e2535;font-family:'Apple SD Got
 .hist-diff.open{display:block;}
 .diff-before{color:#ef4444;text-decoration:line-through;}
 .diff-after{color:#16a34a;}
-#app{display:block;}
+#app{display:none;}
 #header{background:#fff;border-bottom:1px solid #e2e9f5;padding:16px 24px 0;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(99,102,241,.07);}
 #header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
 .h-sub{font-size:10px;letter-spacing:3px;color:#b0bdd4;text-transform:uppercase;margin-bottom:3px;}
@@ -135,10 +135,12 @@ tr:hover td{background:#fafbff;}
 .grp-pill.active{background:#6366f1;border-color:#6366f1;color:#fff;}
 #global-region-filter{display:flex;gap:4px;}
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
-<div id="login-screen" style="display:none">
+<div id="login-screen">
   <div id="login-box">
     <h1>🔐 TW · HK 운영 시트</h1>
     <p>비밀번호를 입력하면 자동으로 담당자가 인식됩니다</p>
@@ -148,7 +150,7 @@ tr:hover td{background:#fafbff;}
   </div>
 </div>
 
-<div id="sync-bar" style="display:flex">
+<div id="sync-bar" style="display:none">
   <div id="sync-dot"></div><span id="sync-txt">연결 중...</span>
 </div>
 
@@ -213,7 +215,7 @@ tr:hover td{background:#fafbff;}
 </div>
 
 <script>
-window._currentUser="예슬(관리자)";window._isAdmin=true;window._isViewer=false;window._globalRegion="ALL";
+window._currentUser=null;window._isAdmin=false;window._isViewer=false;window._globalRegion="ALL";
 </script>
 
 <script>
@@ -1403,13 +1405,13 @@ document.getElementById("pw-input").addEventListener("keydown",function(e){
   if(e.key==="Enter") doLogin(this.value);
 });
 
-// Auto-init (login disabled) - render after Firebase loads
-// onValue will call renderHeader/rerenderCurrent when data arrives
-// but also render immediately with default data as fallback
-setTimeout(function(){renderHeader();renderSales();}, 100);
-
 window.logout=function(){
-  // no-op when login is disabled
+  window._currentUser=null;window._isAdmin=false;window._isViewer=false;
+  document.getElementById("login-screen").style.display="flex";
+  document.getElementById("app").style.display="none";
+  document.getElementById("sync-bar").style.display="none";
+  document.getElementById("pw-input").value="";
+  document.getElementById("login-error").style.display="none";
 };
 window.openHistory=function(){document.getElementById("hist-overlay").classList.add("open");window._renderHistory();};
 window.closeHistory=function(){document.getElementById("hist-overlay").classList.remove("open");};
