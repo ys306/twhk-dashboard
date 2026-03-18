@@ -1258,107 +1258,124 @@ window.toggleCell=function(id){
 function renderGuide(){
   const p=document.getElementById("panel-guide");
   p.innerHTML=`
-  <div style="max-width:860px;margin:0 auto">
+  <div style="max-width:900px;margin:0 auto">
+
     <div class="card mb-16" style="background:linear-gradient(135deg,#eef2ff,#f5f3ff);border-color:#c4b5fd">
       <div style="font-size:18px;font-weight:900;color:#1e2535;margin-bottom:6px">👋 대만·홍콩 대시보드 사용 가이드</div>
-      <div style="font-size:13px;color:#64748b;line-height:1.8">이 대시보드는 <b>TW·HK 리전의 마케팅 성과와 업무 전반을 한 곳에서 관리</b>하기 위한 운영 시트입니다.<br>
-      파트장과 팀원이 데이터를 직접 입력하고, 본사는 이 시트 하나로 현황을 실시간으로 파악합니다.</div>
+      <div style="font-size:13px;color:#64748b;line-height:1.8">TW·HK 리전의 마케팅 성과와 업무 전반을 한 곳에서 관리하는 운영 시트입니다.<br>파트장과 팀원이 데이터를 직접 입력하고, 경영진은 이 시트 하나로 현황을 실시간으로 파악합니다.</div>
+    </div>
+
+    <div class="card mb-16" style="border-color:#6366f1;background:#fafbff">
+      <div style="font-size:15px;font-weight:900;color:#6366f1;margin-bottom:14px">📅 업무 워크플로우</div>
+
+      <div style="margin-bottom:18px">
+        <div style="font-size:12px;font-weight:800;color:#1e2535;background:#eef2ff;border-radius:8px;padding:8px 14px;margin-bottom:10px;display:inline-block">📆 매월말 (말일 1주일 전 컨펌 요청)</div>
+        <div style="font-size:12px;color:#64748b;line-height:2;padding-left:4px">
+          <div>✅ <b>설정 → 컨펌 요청</b> 순서로 진행 (경영진 컨펌 후 확정)</div>
+          <div style="padding-left:12px;color:#94a3b8">
+            <div>• 성과/전략 <b>회고 미팅</b> — 이번 달 성과·전략·액션 달성 여부 및 원인 팀 미팅, 팀원 목표 달성 여부 및 원인 원온원</div>
+            <div>• <b>레퍼런스 브랜드 분석</b> 1개 이상 등록 (🔍 레퍼런스 탭)</div>
+            <div>• 다음 달 <b>성과 목표 설정</b> 후 컨펌 요청 (📊 성과 탭)</div>
+            <div>• 다음 달 <b>전략 수립 + 액션 추가</b> 후 컨펌 요청 (🎯 전략 탭)</div>
+            <div>• <b>프로모션 기획</b> (🎁 프로모션 탭)</div>
+            <div>• <b>온사이트 기획</b> (🛒 온사이트 탭)</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:12px;font-weight:800;color:#1e2535;background:#dcfce7;border-radius:8px;padding:8px 14px;margin-bottom:10px;display:inline-block">🗓️ 매일</div>
+        <div style="font-size:12px;color:#94a3b8;line-height:2;padding-left:16px">
+          <div>• <b>성과 데이터 업데이트</b> — 매출·CM 실적 입력 (📊 성과 탭) → 예상달성률 자동 계산</div>
+          <div>• <b>진행 상황 업데이트</b> — 액션·콘텐츠·인플루언서·프로모션·온사이트 현황 변경 시 즉시 반영</div>
+        </div>
+      </div>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-
       <div class="card">
         <div style="font-size:14px;font-weight:800;margin-bottom:10px">📊 성과 탭</div>
         <div style="font-size:12px;color:#64748b;line-height:1.9">
           <b>목적:</b> 전체 및 제품별 매출·CM 실적 추적<br>
-          <b>입력 주기:</b> 매일 (최신 수치 반영)<br>
-          <b>입력 방법:</b> 상단 카드 클릭 → 전체 수치 입력 / 제품별 행 수정 버튼<br>
-          <b>💡 포인트:</b> 저장 시각 기준으로 예상달성률이 자동 계산됩니다. 수치 입력 후 저장하면 헤더의 예상달성률이 즉시 업데이트됩니다.
+          <b>입력 주기:</b> 매일<br>
+          <b>방법:</b> 상단 카드 클릭 → 전체 수치 / 제품별 행 수정 버튼<br>
+          <b>💡 포인트:</b> 저장 시각 기준 예상달성률 자동 계산. 월말 목표는 컨펌 후 입력.
         </div>
       </div>
-
       <div class="card">
         <div style="font-size:14px;font-weight:800;margin-bottom:10px">🎯 전략 탭</div>
         <div style="font-size:12px;color:#64748b;line-height:1.9">
-          <b>목적:</b> 월별 전략 방향 설정 및 액션 진행 현황 관리<br>
+          <b>목적:</b> 월별 전략 방향 + 액션 진행 현황<br>
           <b>입력 주기:</b> 월초 전략 등록 / 매주 액션 현황 업데이트<br>
-          <b>입력 방법:</b> + 전략 버튼 → 기간·지역·내용 입력 / + 액션 버튼 → 세부 실행 항목 등록<br>
-          <b>💡 포인트:</b> TW/HK 필터로 국가별 전략을 분리해서 볼 수 있습니다. 액션의 마감일이 걸쳐있는 달에는 자동으로 해당 월 뷰에 표시됩니다.
+          <b>방법:</b> + 전략 → 기간·지역·내용 / + 액션 → 세부 실행 항목<br>
+          <b>💡 포인트:</b> 전략·액션은 월말 수립 후 컨펌 받고 확정. TW/HK 필터로 국가별 분리.
         </div>
       </div>
-
       <div class="card">
         <div style="font-size:14px;font-weight:800;margin-bottom:10px">🤝 인플루언서 탭</div>
         <div style="font-size:12px;color:#64748b;line-height:1.9">
-          <b>목적:</b> 인플루언서 섭외부터 업로드·성과까지 파이프라인 관리<br>
-          <b>입력 주기:</b> 진행 현황 변경될 때마다 즉시 업데이트<br>
-          <b>입력 방법:</b> + 추가 → 계정명, 진행 현황, 비용, 콘티 링크 등 입력<br>
-          <b>💡 포인트:</b> 킬러콘텐츠 체크 시 상단 보드에 자동 집계됩니다. 업로드 완료 후 반드시 성과 링크를 기재해주세요.
+          <b>목적:</b> 섭외 → 업로드 → 성과 파이프라인<br>
+          <b>입력 주기:</b> 상태 변경 시 즉시<br>
+          <b>방법:</b> + 추가 → 계정명·현황·비용·콘티 링크<br>
+          <b>💡 포인트:</b> 킬러콘텐츠 체크 시 자동 집계. 업로드 완료 후 성과 링크 필수.
         </div>
       </div>
-
       <div class="card">
         <div style="font-size:14px;font-weight:800;margin-bottom:10px">🎬 콘텐츠 탭</div>
         <div style="font-size:12px;color:#64748b;line-height:1.9">
-          <b>목적:</b> 광고 소재 제작 현황 및 성과 트래킹<br>
-          <b>입력 주기:</b> 소재 기획 시 등록 → 제작 단계별 현황 업데이트<br>
-          <b>입력 방법:</b> + 추가 → 제작 주차(월/주차 선택), 소구점, 기획안 링크 등 입력<br>
-          <b>💡 포인트:</b> 담당자별 보드에서 제작 수량과 킬러콘텐츠 개수가 자동 집계됩니다. 업로드 완료 후 성과 링크 필수 기재.
+          <b>목적:</b> 광고 소재 제작 현황 트래킹<br>
+          <b>입력 주기:</b> 기획 시 등록 → 단계별 업데이트<br>
+          <b>방법:</b> + 추가 → 주차·소구점·기획안 링크<br>
+          <b>💡 포인트:</b> 담당자별 제작/킬러 수량 자동 집계. 성과 링크 필수.
         </div>
       </div>
-
       <div class="card">
         <div style="font-size:14px;font-weight:800;margin-bottom:10px">🎁 프로모션 탭</div>
         <div style="font-size:12px;color:#64748b;line-height:1.9">
-          <b>목적:</b> 프로모션 기획·진행·회고 통합 관리<br>
-          <b>입력 주기:</b> 기획 시 등록 → 종료 후 실적·회고 입력<br>
-          <b>입력 방법:</b> + 추가 → 기간, 내용 요약, 목표 매출 입력. 종료 후 실적과 잘한 것/아쉬운 것 기재<br>
-          <b>💡 포인트:</b> 회고 항목(잘한 것·아쉬운 것)은 반드시 채워주세요. 다음 프로모션 기획의 근거가 됩니다.
+          <b>목적:</b> 프로모션 기획·진행·회고 통합<br>
+          <b>입력 주기:</b> 월말 기획 등록 → 종료 후 실적·회고<br>
+          <b>방법:</b> + 추가 → 기간·내용·목표 매출<br>
+          <b>💡 포인트:</b> 종료 후 잘한 것/아쉬운 것 반드시 기재.
         </div>
       </div>
-
       <div class="card">
         <div style="font-size:14px;font-weight:800;margin-bottom:10px">🛒 온사이트 탭</div>
         <div style="font-size:12px;color:#64748b;line-height:1.9">
-          <b>목적:</b> 쇼핑몰 내 페이지 개선·테스트 작업 트래킹<br>
-          <b>입력 주기:</b> 작업 시작 시 등록 → 상태 변경 시 업데이트<br>
-          <b>입력 방법:</b> + 추가 → 액션명, 내용, 기간, 진행 현황, 목표·결과 입력<br>
-          <b>💡 포인트:</b> 진행 현황을 '테스트중 → 테스트 완료 → 유지/원복'으로 관리해서 어떤 개선이 효과가 있었는지 추적합니다.
+          <b>목적:</b> 쇼핑몰 내 개선·테스트 트래킹<br>
+          <b>입력 주기:</b> 월말 기획 → 상태 변경 시 업데이트<br>
+          <b>방법:</b> + 추가 → 액션명·기간·목표·결과<br>
+          <b>💡 포인트:</b> 테스트중→완료→유지/원복 상태로 효과 추적.
         </div>
       </div>
-
       <div class="card">
         <div style="font-size:14px;font-weight:800;margin-bottom:10px">🔍 레퍼런스 탭</div>
         <div style="font-size:12px;color:#64748b;line-height:1.9">
-          <b>목적:</b> 경쟁사·레퍼런스 브랜드 분석 및 벤치마킹 적용 관리<br>
-          <b>입력 주기:</b> 분석 진행 시 등록 → 완료 후 결과 및 적용 내용 기재<br>
-          <b>입력 방법:</b> + 추가 → 브랜드명, 경쟁사 제품, 벤치마킹 포인트, 보고서 링크 입력<br>
-          <b>💡 포인트:</b> 분석에서 그치지 않고 '벤치마킹 적용중/완료' 상태까지 추적해서 실제 실행으로 이어지게 합니다.
+          <b>목적:</b> 경쟁사 분석 및 벤치마킹<br>
+          <b>입력 주기:</b> 월 1회 이상<br>
+          <b>방법:</b> + 추가 → 브랜드·포인트·보고서 링크<br>
+          <b>💡 포인트:</b> 분석에서 그치지 않고 벤치마킹 적용까지 추적.
         </div>
       </div>
-
       <div class="card" style="background:#fffbeb;border-color:#fde68a">
-        <div style="font-size:14px;font-weight:800;margin-bottom:10px">⚙️ 설정 탭 <span style="font-size:11px;color:#d97706;font-weight:600">(관리자 전용)</span></div>
+        <div style="font-size:14px;font-weight:800;margin-bottom:10px">⚙️ 설정 탭 <span style="font-size:11px;color:#d97706">(관리자 전용)</span></div>
         <div style="font-size:12px;color:#64748b;line-height:1.9">
-          <b>담당자 계정:</b> 로그인 비밀번호 및 관리자 권한 설정<br>
-          <b>담당자 목록:</b> 인플루언서·콘텐츠 탭에 표시될 담당자 이름 관리<br>
-          <b>국가별 제품:</b> TW·HK 각 국가에서 취급하는 제품 목록 별도 관리<br>
-          <b>필드 관리:</b> 각 탭의 입력 항목을 추가·수정·삭제·순서변경<br>
-          <b>💾 백업:</b> 매일 자동 백업. 수동 백업 및 특정 시점 복구 가능
+          <b>담당자 계정:</b> 로그인·권한 설정<br>
+          <b>국가별 제품:</b> TW·HK 제품 목록 별도 관리<br>
+          <b>필드 관리:</b> 각 탭 항목 추가·수정·삭제<br>
+          <b>💾 백업:</b> 자동 백업 + 수동 백업·복구 가능
         </div>
       </div>
-
     </div>
 
     <div class="card" style="background:#f0fdf4;border-color:#bbf7d0">
       <div style="font-size:13px;font-weight:800;color:#16a34a;margin-bottom:10px">✅ 올바른 사용법 요약</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;color:#64748b;line-height:1.8">
-        <div>1️⃣ 성과 탭 수치는 매일 업데이트 (예상달성률 자동 계산)</div>
-        <div>2️⃣ 전략·액션은 월초 등록 후 매주 현황 업데이트</div>
-        <div>3️⃣ 인플루언서·콘텐츠는 시작 시 바로 등록, 단계별 상태 변경</div>
-        <div>4️⃣ 링크(콘티, 기획안, 성과)는 반드시 기재 — 본사 확인용</div>
-        <div>5️⃣ 프로모션·온사이트 종료 후 결과·회고 필수 입력</div>
-        <div>6️⃣ 킬러콘텐츠는 체크 표시 — 별도 집계 및 레퍼런스로 활용</div>
+        <div>1️⃣ 성과 수치는 <b>매일</b> 업데이트 (예상달성률 자동 계산)</div>
+        <div>2️⃣ 진행 상황(액션·콘텐츠·인플루언서 등)은 변경 시 <b>즉시</b> 업데이트</div>
+        <div>3️⃣ 전략·목표는 <b>월말 수립 → 컨펌 → 월초 실행</b></div>
+        <div>4️⃣ 프로모션·온사이트는 <b>월 1회 기획</b>, 종료 후 회고 필수</div>
+        <div>5️⃣ 레퍼런스 분석은 <b>월 1개 이상</b>, 벤치마킹 적용까지 추적</div>
+        <div>6️⃣ 링크(콘티·기획안·성과)는 <b>반드시 기재</b> — 경영진 확인용</div>
       </div>
     </div>
   </div>`;
