@@ -268,6 +268,10 @@ function _initFirebase(){
     // Override save to also write to Firebase
     const _localSave=save;
     window._fbdb=db;
+    save=async function(desc,diff){
+      await _localSave(desc,diff);
+      try{db.ref("v5").set(S);}catch(e){}
+    };
   }catch(e){console.log("Firebase optional - using localStorage only");}
 }
 // Try Firebase after page renders
